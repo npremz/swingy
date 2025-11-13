@@ -5,7 +5,7 @@ import java.util.Scanner;
 import be.npremont.swingy.model.Direction;
 import be.npremont.swingy.model.Hero;
 
-public class ConsoleView
+public class ConsoleView implements IView 
 {
 	private Scanner scanner;
 
@@ -14,11 +14,13 @@ public class ConsoleView
 		this.scanner = new Scanner(System.in);
 	}
 
+	@Override
 	public void displayMessage(String msg)
 	{
 		System.out.println(msg);
 	}
 
+	@Override
 	public void displayMap(Hero hero, int mapSize)
 	{
 		System.out.println("\n=== Map ===");
@@ -26,12 +28,14 @@ public class ConsoleView
 		System.out.println("Map size: " + mapSize);
 	}
 
+	@Override
 	public String getUserInput(String prompt)
 	{
 		System.out.println(prompt);
 		return scanner.nextLine();
 	}
 
+	@Override
 	public Direction getDirection()
 	{
 		System.out.println("N=North, S=South, E=East, W=West, Q=Quit");

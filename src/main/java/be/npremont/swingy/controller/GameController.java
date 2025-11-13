@@ -2,15 +2,15 @@ package be.npremont.swingy.controller;
 
 import be.npremont.swingy.model.GameMap;
 import be.npremont.swingy.model.Hero;
-import be.npremont.swingy.view.ConsoleView;
+import be.npremont.swingy.view.IView;
 import be.npremont.swingy.model.Direction;
 
 public class GameController {
 	private Hero hero;
 	private GameMap game_map;
-	private ConsoleView view;
+	private IView view;
 
-	public GameController(ConsoleView view)
+	public GameController(IView view)
 	{
 		this.view = view;
 	}

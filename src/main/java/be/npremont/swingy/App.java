@@ -2,6 +2,7 @@ package be.npremont.swingy;
 
 import be.npremont.swingy.controller.GameController;
 import be.npremont.swingy.view.ConsoleView;
+import be.npremont.swingy.view.IView;
 
 public class App 
 {
@@ -14,22 +15,25 @@ public class App
 		}
 		
 		String mode = args[0];
+		IView view;
 		
 		if (mode.equals("console"))
 		{
 			System.out.println("Starting in console mode...");
-			ConsoleView view = new ConsoleView();
-			GameController game_controller = new GameController(view);
-			game_controller.start();
+			view = new ConsoleView();
 		}
 		else if (mode.equals("gui"))
 		{
 			System.out.println("Starting in GUI mode...");
-			// TODO: lancer le jeu en mode GUI
+			view = new ConsoleView();
 		}
 		else
 		{
 			System.out.println("Invalid mode. Use 'console' or 'gui'");
+			return;
 		}
+
+		GameController game_controller = new GameController(view);
+		game_controller.start();
 	}
 }
