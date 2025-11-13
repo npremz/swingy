@@ -1,5 +1,8 @@
 package be.npremont.swingy;
 
+import be.npremont.swingy.controller.GameController;
+import be.npremont.swingy.view.ConsoleView;
+
 public class App 
 {
 	public static void main(String[] args)
@@ -15,7 +18,9 @@ public class App
 		if (mode.equals("console"))
 		{
 			System.out.println("Starting in console mode...");
-			// TODO: lancer le jeu en mode console
+			ConsoleView view = new ConsoleView();
+			GameController game_controller = new GameController(view);
+			game_controller.start();
 		}
 		else if (mode.equals("gui"))
 		{
