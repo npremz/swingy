@@ -2,6 +2,7 @@ package be.npremont.swingy.controller;
 
 import be.npremont.swingy.model.GameMap;
 import be.npremont.swingy.model.Hero;
+import be.npremont.swingy.model.HeroClass;
 import be.npremont.swingy.view.IView;
 import be.npremont.swingy.model.Direction;
 
@@ -19,11 +20,16 @@ public class GameController {
 	{
 		String name = view.getUserInput("Enter hero name: ");
 
+		HeroClass hero_class = view.chooseHeroClass();
+		view.displayMessage("You choose " + hero_class.getDisplayName() + "!");
+
 		int map_size = 10;
 		game_map = new GameMap(map_size);
 
 		int center = map_size / 2;
-		hero = new Hero(name, center, center);
+		hero = new Hero(name, hero_class, center, center);
+
+		view.displayHeroStats(hero);
 
 		view.displayMessage("Game started, get on the edges of the map to win!");
 		gameLoop();
@@ -36,7 +42,7 @@ public class GameController {
 		while (running)
 		{
 			view.displayMap(hero, 10);
-			Direction dir = view.getDirection();
+			Direction dir = view.getDirection(hero);
 
 			if (dir == null)
 			{

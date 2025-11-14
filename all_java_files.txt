@@ -1,0 +1,307 @@
+=== ./src/main/java/be/npremont/swingy/model/GameMap.java ===
+package be.npremont.swingy.model;
+
+public class GameMap
+{
+	private int size;
+
+	public GameMap(int size)
+	{
+		this.size = size;
+	}
+
+	public boolean isOutOfBounds(int x, int y)
+	{
+		return x < 0 || x >= size || y < 0 || y >= size;
+	}
+	
+	// Getters
+	public int getSize()
+	{
+		return size;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/Direction.java ===
+package be.npremont.swingy.model;
+
+public enum Direction
+{
+	NORTH(0, -1),
+	SOUTH(0, 1),
+	EAST(1, 0),
+	WEST(-1, 0);
+
+	private int dx;
+	private int dy;
+
+	Direction(int dx, int dy)
+	{
+		this.dx = dx;
+		this.dy = dy;
+	}
+
+	// Getters
+	public int getDx()
+	{
+		return this.dx;
+	}
+
+	public int getDy()
+	{
+		return this.dy;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/Hero.java ===
+package be.npremont.swingy.model;
+
+public class Hero
+{
+	private String 	name;
+	private int		x;
+	private int		y;
+
+	public Hero(String name, int startX, int startY)
+	{
+		this.name = name;
+		this.x = startX;
+		this.y = startY;
+	}
+
+	public void move(int dx, int dy)
+	{
+		this.x += dx;
+		this.y += dy;
+	}
+
+	// Getters
+	public String getName()
+	{
+		return name;
+	}
+
+	public int getX()
+	{
+		return x;
+	}
+
+	public int getY()
+	{
+		return y;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/App.java ===
+package be.npremont.swingy;
+
+import be.npremont.swingy.controller.GameController;
+import be.npremont.swingy.view.ConsoleView;
+import be.npremont.swingy.view.IView;
+
+public class App 
+{
+	public static void main(String[] args)
+	{
+		if (args.length != 1)
+		{
+			System.out.println("Usage: java -jar swingy.jar [console|gui]");
+			return;
+		}
+		
+		String mode = args[0];
+		IView view;
+		
+		if (mode.equals("console"))
+		{
+			System.out.println("Starting in console mode...");
+			view = new ConsoleView();
+		}
+		else if (mode.equals("gui"))
+		{
+			System.out.println("Starting in GUI mode...");
+			view = new ConsoleView();
+		}
+		else
+		{
+			System.out.println("Invalid mode. Use 'console' or 'gui'");
+			return;
+		}
+
+		GameController game_controller = new GameController(view);
+		game_controller.start();
+	}
+}
+=== ./src/main/java/be/npremont/swingy/controller/GameController.java ===
+package be.npremont.swingy.controller;
+
+import be.npremont.swingy.model.GameMap;
+import be.npremont.swingy.model.Hero;
+import be.npremont.swingy.view.IView;
+import be.npremont.swingy.model.Direction;
+
+public class GameController {
+	private Hero hero;
+	private GameMap game_map;
+	private IView view;
+
+	public GameController(IView view)
+	{
+		this.view = view;
+	}
+
+	public void start()
+	{
+		String name = view.getUserInput("Enter hero name: ");
+
+		int map_size = 10;
+		game_map = new GameMap(map_size);
+
+		int center = map_size / 2;
+		hero = new Hero(name, center, center);
+
+		view.displayMessage("Game started, get on the edges of the map to win!");
+		gameLoop();
+	}
+
+	private void gameLoop()
+	{
+		boolean running = true;
+
+		while (running)
+		{
+			view.displayMap(hero, 10);
+			Direction dir = view.getDirection();
+
+			if (dir == null)
+			{
+				view.displayMessage("Terminating the session.");
+				running = false;
+				continue;
+			}
+
+			int new_x = hero.getX() + dir.getDx();
+			int new_y = hero.getY() + dir.getDy();
+
+			if (game_map.isOutOfBounds(new_x, new_y))
+			{
+				view.displayMessage("Well done! You reached the end of this level.");
+				running = false;
+				continue;
+			}
+
+			hero.move(dir.getDx(), dir.getDy());
+		}
+
+	}
+}
+=== ./src/main/java/be/npremont/swingy/view/IView.java ===
+package be.npremont.swingy.view;
+
+import be.npremont.swingy.model.Hero;
+import be.npremont.swingy.model.Direction;
+
+public interface IView
+{
+	void		displayMessage(String msg);
+	void		displayMap(Hero hero, int map_size);
+	String		getUserInput(String prompt);
+	Direction	getDirection();
+}
+=== ./src/main/java/be/npremont/swingy/view/ConsoleView.java ===
+package be.npremont.swingy.view;
+
+import java.util.Scanner;
+
+import be.npremont.swingy.model.Direction;
+import be.npremont.swingy.model.Hero;
+
+public class ConsoleView implements IView 
+{
+	private Scanner scanner;
+
+	public ConsoleView()
+	{
+		this.scanner = new Scanner(System.in);
+	}
+
+	@Override
+	public void displayMessage(String msg)
+	{
+		System.out.println(msg);
+	}
+
+	@Override
+	public void displayMap(Hero hero, int mapSize)
+	{
+		System.out.println("\n=== Map ===");
+		System.out.println("Your position: (" + hero.getX() + ", " + hero.getY() + ")");
+		System.out.println("Map size: " + mapSize);
+	}
+
+	@Override
+	public String getUserInput(String prompt)
+	{
+		System.out.println(prompt);
+		return scanner.nextLine();
+	}
+
+	@Override
+	public Direction getDirection()
+	{
+		System.out.println("N=North, S=South, E=East, W=West, Q=Quit");
+		String input = getUserInput("> ").toUpperCase();
+
+		switch (input) {
+			case "N":
+				return Direction.NORTH;
+			case "S":
+				return Direction.SOUTH;
+			case "E":
+				return Direction.EAST;
+			case "W":
+				return Direction.WEST;
+			case "Q":
+				return null;
+			default:
+				displayMessage("Invalid input");
+				return getDirection();
+		}
+	}
+}
+=== ./src/test/java/be/npremont/swingy/AppTest.java ===
+package be.npremont.swingy;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+/**
+ * Unit test for simple App.
+ */
+public class AppTest 
+    extends TestCase
+{
+    /**
+     * Create the test case
+     *
+     * @param testName name of the test case
+     */
+    public AppTest( String testName )
+    {
+        super( testName );
+    }
+
+    /**
+     * @return the suite of tests being tested
+     */
+    public static Test suite()
+    {
+        return new TestSuite( AppTest.class );
+    }
+
+    /**
+     * Rigourous Test :-)
+     */
+    public void testApp()
+    {
+        assertTrue( true );
+    }
+}
