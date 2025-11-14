@@ -3,30 +3,30 @@ package be.npremont.swingy.model;
 public class Enemy
 {
 	private final EnemyType type;
-	private int currentHp;
-	private final int maxHp;
+	private int current_hp;
+	private final int max_hp;
 	private final int attack;
 	private final int defense;
-	private final int xpReward;
+	private final int xp_reward;
 
 	public Enemy(EnemyType type, int heroLevel)
 	{
 		this.type = type;
-		this.maxHp = type.getScaledHp(heroLevel);
-		this.currentHp = this.maxHp;
+		this.max_hp = type.getScaledHp(heroLevel);
+		this.current_hp = this.max_hp;
 		this.attack = type.getScaledAttack(heroLevel);
 		this.defense = type.getScaledDefense(heroLevel);
-		this.xpReward = type.getXpReward();
+		this.xp_reward = type.getXpReward();
 	}
 
 	public void takeDamage(int damage)
 	{
-		this.currentHp = Math.max(0, this.currentHp - damage);
+		this.current_hp = Math.max(0, this.current_hp - damage);
 	}
 
 	public boolean isAlive()
 	{
-		return currentHp > 0;
+		return current_hp > 0;
 	}
 
 	// Getters
@@ -37,12 +37,12 @@ public class Enemy
 
 	public int getCurrentHp()
 	{
-		return currentHp;
+		return current_hp;
 	}
 
 	public int getMaxHp()
 	{
-		return maxHp;
+		return max_hp;
 	}
 
 	public int getAttack()
@@ -57,6 +57,6 @@ public class Enemy
 
 	public int getXpReward()
 	{
-		return xpReward;
+		return xp_reward;
 	}
 }

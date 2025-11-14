@@ -6,23 +6,23 @@ public enum ItemType
 	ARMOR("Armor", "Defense"),
 	HELM("Helm", "HP");
 
-	private final String displayName;
-	private final String statName;
+	private final String display_name;
+	private final String stat_name;
 
-	ItemType(String displayName, String statName)
+	ItemType(String display_name, String stat_name)
 	{
-		this.displayName = displayName;
-		this.statName = statName;
+		this.display_name = display_name;
+		this.stat_name = stat_name;
 	}
 
 	// Getters
 	public String getDisplayName()
 	{
-		return displayName;
+		return display_name;
 	}
 
 	public String getStatName()
 	{
-		return statName;
+		return stat_name;
 	}
 }

@@ -10,6 +10,10 @@ public class HeroStats
 	private int level;
 	private HeroClass hero_class;
 
+	private Item weapon;
+	private Item armor;
+	private Item helm;
+
 	public HeroStats(HeroClass hero_class)
 	{
 		this.hero_class = hero_class;
@@ -21,6 +25,10 @@ public class HeroStats
 		this.current_hp = this.max_hp;
 		this.attack = base_stats.getAttack();
 		this.defense = base_stats.getDefense();
+
+		this.weapon = null;
+		this.armor = null;
+		this.helm = null;
 	}
 
 	public void addXp(int amount)
@@ -50,7 +58,89 @@ public class HeroStats
 		return level * 1000 + (int) Math.pow(level - 1, 2) * 450;
 	}
 
-	// Getters
+	public void takeDamage(int damage)
+	{
+		this.current_hp = Math.max(0, this.current_hp - damage);
+	}
+
+	public void heal(int amount)
+	{
+		this.current_hp = Math.min(getMaxHpWithItems(), this.current_hp + amount);
+	}
+
+	public void equipWeapon(Item item)
+	{
+		if (item.getType() != ItemType.WEAPON)
+			throw new IllegalArgumentException("Can only equip weapons in weapon slot");
+		this.weapon = item;
+	}
+
+	public void equipArmor(Item item)
+	{
+		if (item.getType() != ItemType.ARMOR)
+			throw new IllegalArgumentException("Can only equip armor in armor slot");
+		this.armor = item;
+	}
+
+	public void equipHelm(Item item)
+	{
+		if (item.getType() != ItemType.HELM)
+			throw new IllegalArgumentException("Can only equip helms in helm slot");
+
+		int currentHpWithoutHelm = this.current_hp;
+		int oldMaxHp = getMaxHpWithItems();
+
+		this.helm = item;
+
+		int newMaxHp = getMaxHpWithItems();
+		if (oldMaxHp > 0)
+		{
+			double ratio = (double) currentHpWithoutHelm / oldMaxHp;
+			this.current_hp = (int) Math.round(newMaxHp * ratio);
+		}
+	}
+
+	public void equipItem(Item item)
+	{
+		switch (item.getType())
+		{
+			case WEAPON:
+				equipWeapon(item);
+				break;
+			case ARMOR:
+				equipArmor(item);
+				break;
+			case HELM:
+				equipHelm(item);
+				break;
+		}
+	}
+
+	public int getTotalAttack()
+	{
+		int total = attack;
+		if (weapon != null)
+			total += weapon.getBonus();
+		return total;
+	}
+
+	public int getTotalDefense()
+	{
+		int total = defense;
+		if (armor != null)
+			total += armor.getBonus();
+		return total;
+	}
+
+	public int getMaxHpWithItems()
+	{
+		int total = max_hp;
+		if (helm != null)
+			total += helm.getBonus();
+		return total;
+	}
+
+	// Getters 
 	public int getMaxHp()
 	{
 		return max_hp;
@@ -86,9 +176,39 @@ public class HeroStats
 		return hero_class;
 	}
 
-	// Setters
+	public Item getWeapon()
+	{
+		return weapon;
+	}
+
+	public Item getArmor()
+	{
+		return armor;
+	}
+
+	public Item getHelm()
+	{
+		return helm;
+	}
+
+	public boolean hasWeapon()
+	{
+		return weapon != null;
+	}
+
+	public boolean hasArmor()
+	{
+		return armor != null;
+	}
+
+	public boolean hasHelm()
+	{
+		return helm != null;
+	}
+
+	// Setter pour currentHp (utile pour les combats)
 	public void setCurrentHp(int hp)
 	{
-		this.current_hp = Math.max(0, Math.min(hp, max_hp));
+		this.current_hp = Math.max(0, Math.min(hp, getMaxHpWithItems()));
 	}
 }

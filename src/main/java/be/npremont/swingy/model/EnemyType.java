@@ -24,60 +24,60 @@ public enum EnemyType
 		200
 	);
 
-	private final String displayName;
-	private final int baseHp;
-	private final int baseAttack;
-	private final int baseDefense;
-	private final int xpReward;
+	private final String display_name;
+	private final int base_hp;
+	private final int base_attack;
+	private final int base_defense;
+	private final int xp_reward;
 
-	EnemyType(String displayName, int baseHp, int baseAttack, int baseDefense, int xpReward)
+	EnemyType(String display_name, int base_hp, int base_attack, int base_defense, int xp_reward)
 	{
-		this.displayName = displayName;
-		this.baseHp = baseHp;
-		this.baseAttack = baseAttack;
-		this.baseDefense = baseDefense;
-		this.xpReward = xpReward;
+		this.display_name = display_name;
+		this.base_hp = base_hp;
+		this.base_attack = base_attack;
+		this.base_defense = base_defense;
+		this.xp_reward = xp_reward;
 	}
 
 	// Getters
 	public String getDisplayName()
 	{
-		return displayName;
+		return display_name;
 	}
 
 	public int getBaseHp()
 	{
-		return baseHp;
+		return base_hp;
 	}
 
 	public int getBaseAttack()
 	{
-		return baseAttack;
+		return base_attack;
 	}
 
 	public int getBaseDefense()
 	{
-		return baseDefense;
+		return base_defense;
 	}
 
 	public int getXpReward()
 	{
-		return xpReward;
+		return xp_reward;
 	}
 
 	// Getters with relative scaling
 	public int getScaledHp(int heroLevel)
 	{
-		return (int)(baseHp * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_hp * (1 + (heroLevel - 1) * 0.25));
 	}
 
 	public int getScaledAttack(int heroLevel)
 	{
-		return (int)(baseAttack * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_attack * (1 + (heroLevel - 1) * 0.25));
 	}
 
 	public int getScaledDefense(int heroLevel)
 	{
-		return (int)(baseDefense * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_defense * (1 + (heroLevel - 1) * 0.25));
 	}
 }

@@ -1,11 +1,15 @@
 package be.npremont.swingy.view;
 
 import java.util.Scanner;
+import java.util.List;
 
 import be.npremont.swingy.model.Direction;
 import be.npremont.swingy.model.Hero;
 import be.npremont.swingy.model.HeroClass;
 import be.npremont.swingy.model.HeroStats;
+import be.npremont.swingy.model.Enemy;
+import be.npremont.swingy.model.Item;
+import be.npremont.swingy.model.ItemType;
 
 public class ConsoleView implements IView 
 {
@@ -23,11 +27,23 @@ public class ConsoleView implements IView
 	}
 
 	@Override
-	public void displayMap(Hero hero, int mapSize)
+	public void displayGameStatus(Hero hero, int mapSize, double distanceFromCenter, int distanceToEdge)
 	{
-		System.out.println("\n=== Map ===");
-		System.out.println("Your position: (" + hero.getX() + ", " + hero.getY() + ")");
-		System.out.println("Map size: " + mapSize);
+		System.out.println("\n=== Your Status ===");
+		System.out.println("Position: (" + hero.getX() + ", " + hero.getY() + ")");
+		System.out.println("Map size: " + mapSize + "x" + mapSize);
+		System.out.println("Distance from center: " + String.format("%.1f", distanceFromCenter));
+		System.out.println("Distance to edge: " + distanceToEdge);
+		System.out.println();
+		displayHeroStatsCompact(hero);
+	}
+
+	private void displayHeroStatsCompact(Hero hero)
+	{
+		HeroStats stats = hero.getStats();
+		System.out.println("HP: " + stats.getCurrentHp() + "/" + stats.getMaxHpWithItems() + 
+			" | Level: " + stats.getLevel() + 
+			" | XP: " + stats.getXp() + "/" + stats.getXpToNextLevel());
 	}
 
 	@Override
@@ -37,25 +53,70 @@ public class ConsoleView implements IView
 		System.out.println("\n=== " + hero.getName() + " (" + stats.getHeroClass().getDisplayName() + ") ===");
 		System.out.println("Level: " + stats.getLevel());
 		System.out.println("XP: " + stats.getXp() + " / " + stats.getXpToNextLevel());
-		System.out.println("HP: " + stats.getCurrentHp() + " / " + stats.getMaxHp());
-		System.out.println("Attack: " + stats.getAttack());
-		System.out.println("Defense: " + stats.getDefense());
+		System.out.println("HP: " + stats.getCurrentHp() + " / " + stats.getMaxHpWithItems() + 
+			" (Base: " + stats.getMaxHp() + 
+			(stats.hasHelm() ? " + " + stats.getHelm().getBonus() + " from helm" : "") + ")");
+		System.out.println("Attack: " + stats.getTotalAttack() + 
+			" (Base: " + stats.getAttack() + 
+			(stats.hasWeapon() ? " + " + stats.getWeapon().getBonus() + " from weapon" : "") + ")");
+		System.out.println("Defense: " + stats.getTotalDefense() + 
+			" (Base: " + stats.getDefense() + 
+			(stats.hasArmor() ? " + " + stats.getArmor().getBonus() + " from armor" : "") + ")");
+		
+		System.out.println("\n=== Equipment ===");
+		System.out.println("Weapon: " + (stats.hasWeapon() ? stats.getWeapon().toString() : "None"));
+		System.out.println("Armor: " + (stats.hasArmor() ? stats.getArmor().toString() : "None"));
+		System.out.println("Helm: " + (stats.hasHelm() ? stats.getHelm().toString() : "None"));
+	}
+
+	@Override
+	public void displayCombat(List<String> combatLog)
+	{
+		System.out.println("\n⚔️  COMBAT ⚔️");
+		System.out.println();
+		for (String line : combatLog)
+		{
+			System.out.println(line);
+		}
+	}
+
+	@Override
+	public void displayVictory(int xpGained)
+	{
+		System.out.println("\n🎉 VICTORY! 🎉");
+		System.out.println("You gained " + xpGained + " XP!");
+	}
+
+	@Override
+	public void displayDefeat()
+	{
+		System.out.println("\n💀 DEFEAT 💀");
+		System.out.println("You have been slain...");
+		System.out.println("GAME OVER");
+	}
+
+	@Override
+	public void displayLevelUp(int newLevel)
+	{
+		System.out.println("\n⭐ LEVEL UP! ⭐");
+		System.out.println("You are now level " + newLevel + "!");
 	}
 
 	@Override
 	public String getUserInput(String prompt)
 	{
-		System.out.println(prompt);
+		System.out.print(prompt);
 		return scanner.nextLine();
 	}
 
 	@Override
 	public Direction getDirection(Hero hero)
 	{
-		System.out.println("N=North, S=South, E=East, W=West, I=Info, X(debug)=addXp, Q=Quit");
+		System.out.println("\nN=North, S=South, E=East, W=West, X(debug)=addXp, I=Info, Q=Quit");
 		String input = getUserInput("> ").toUpperCase();
 
-		switch (input) {
+		switch (input)
+		{
 			case "N":
 				return Direction.NORTH;
 			case "S":
@@ -69,6 +130,7 @@ public class ConsoleView implements IView
 				return getDirection(hero);
 			case "X":
 				hero.getStats().addXp(800);
+				displayMessage("Added 800xp.");
 				return getDirection(hero);
 			case "Q":
 				return null;
@@ -111,6 +173,69 @@ public class ConsoleView implements IView
 			default:
 				displayMessage("Invalid choice. Please try again.");
 				return chooseHeroClass();
+		}
+	}
+
+	@Override
+	public boolean chooseFightOrRun(Hero hero, Enemy enemy)
+	{
+		System.out.println("\n⚠️  ENEMY ENCOUNTER! ⚠️");
+		System.out.println();
+		System.out.println("A wild " + enemy.getType().getDisplayName() + " appears!");
+		System.out.println(enemy.getType().getDisplayName() + " - HP: " + enemy.getMaxHp() + 
+			" | Attack: " + enemy.getAttack() + 
+			" | Defense: " + enemy.getDefense());
+		System.out.println();
+		System.out.println("Your stats:");
+		System.out.println("HP: " + hero.getStats().getCurrentHp() + "/" + hero.getStats().getMaxHpWithItems() + 
+			" | Attack: " + hero.getStats().getTotalAttack() + 
+			" | Defense: " + hero.getStats().getTotalDefense());
+		System.out.println();
+		System.out.println("1. FIGHT");
+		System.out.println("2. RUN (50% chance)");
+
+		String input = getUserInput("> ");
+
+		switch (input)
+		{
+			case "1":
+				return true;
+			case "2":
+				return false;
+			default:
+				displayMessage("Invalid choice. Please choose 1 or 2.");
+				return chooseFightOrRun(hero, enemy);
+		}
+	}
+
+	@Override
+	public boolean chooseEquipItem(Item newItem, Item currentItem)
+	{
+		System.out.println("\n💎 LOOT FOUND! 💎");
+		System.out.println();
+		System.out.println("You found: " + newItem.toString());
+		System.out.println();
+		
+		if (currentItem != null)
+			System.out.println("Current " + newItem.getType().getDisplayName().toLowerCase() + ": " + currentItem.toString());
+		else
+			System.out.println("You don't have a " + newItem.getType().getDisplayName().toLowerCase() + " equipped.");
+		
+		System.out.println();
+		System.out.println("1. EQUIP new item");
+		System.out.println("2. KEEP current " + (currentItem != null ? "item" : "slot empty"));
+
+		String input = getUserInput("> ");
+
+		switch (input)
+		{
+			case "1":
+				return true;
+			case "2":
+				return false;
+			default:
+				displayMessage("Invalid choice. Please choose 1 or 2.");
+				return chooseEquipItem(newItem, currentItem);
 		}
 	}
 }

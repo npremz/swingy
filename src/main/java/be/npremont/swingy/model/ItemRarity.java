@@ -33,42 +33,42 @@ public enum ItemRarity
 		0.5
 	);
 
-	private final String displayName;
-	private final int minBonus;
-	private final int maxBonus;
-	private final double dropChance;
+	private final String display_name;
+	private final int min_bonus;
+	private final int max_bonus;
+	private final double drop_chance;
 
-	ItemRarity(String displayName, int minBonus, int maxBonus, double dropChance)
+	ItemRarity(String display_name, int min_bonus, int max_bonus, double drop_chance)
 	{
-		this.displayName = displayName;
-		this.minBonus = minBonus;
-		this.maxBonus = maxBonus;
-		this.dropChance = dropChance;
+		this.display_name = display_name;
+		this.min_bonus = min_bonus;
+		this.max_bonus = max_bonus;
+		this.drop_chance = drop_chance;
 	}
 
 	// Getters
-	public String getDisplayName()
+	public String getDisplay_name()
 	{
-		return displayName;
+		return display_name;
 	}
 
 	public int getMinBonus()
 	{
-		return minBonus;
+		return min_bonus;
 	}
 
 	public int getMaxBonus()
 	{
-		return maxBonus;
+		return max_bonus;
 	}
 
 	public double getDropChance()
 	{
-		return dropChance;
+		return drop_chance;
 	}
 
 	public int generateBonus()
 	{
-		return minBonus + (int)(Math.random() * (maxBonus - minBonus + 1));
+		return min_bonus + (int)(Math.random() * (max_bonus - min_bonus + 1));
 	}
 }
