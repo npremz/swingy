@@ -7,21 +7,21 @@ public enum EnemyType
 		30,
 		8,
 		3,
-		50
+		340
 	),
 	ORC(
 		"Orc",
 		50,
 		12,
 		7,
-		100
+		500
 	),
 	DRAGON(
 		"Dragon",
 		80,
 		18,
 		12,
-		200
+		1500
 	);
 
 	private final String display_name;

@@ -4,17 +4,17 @@ public enum HeroClass
 {
 	WARRIOR(
 		"Warrior",
-		new BaseStats(150, 12, 15),
+		new BaseStats(150, 12, 12),
 		new GrowthRates(1.15, 1.08, 1.12)
 	),
 	ARCHER(
 		"Archer",
-		new BaseStats(100, 15, 10),
+		new BaseStats(120, 15, 8),
 		new GrowthRates(1.1, 1.1, 1.1)
 	),
 	ASSASSIN(
 		"Assassin",
-		new BaseStats(150, 12, 15),
+		new BaseStats(100, 18, 6),
 		new GrowthRates(1.05, 1.15, 1.05)
 	);
 

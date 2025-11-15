@@ -47,7 +47,7 @@ public enum ItemRarity
 	}
 
 	// Getters
-	public String getDisplay_name()
+	public String getDisplayName()
 	{
 		return display_name;
 	}
