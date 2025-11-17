@@ -1,12 +1,16 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.game;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.enums.EnemyType;
 
 public class GameMap
 {
 	private int size;
 	private List<EnemySpawn> enemies;
+	private List<HealingSpot> healing_spots;
 	private int centerX;
 	private int centerY;
 
@@ -16,7 +20,9 @@ public class GameMap
 		this.centerX = size / 2;
 		this.centerY = size / 2;
 		this.enemies = new ArrayList<>();
+		this.healing_spots = new ArrayList<>();
 		generateEnemies(heroLevel);
+		generateHealingSpots();
 	}
 
 	private void generateEnemies(int heroLevel)
@@ -46,6 +52,39 @@ public class GameMap
 			enemiesPlaced++;
 		}
 	}
+
+	private void generateHealingSpots()
+	{
+		int totalCells = size * size;
+		int targetHealingSpots = Math.max(3, (int)(totalCells * 0.05));
+		int spotsPlaced = 0;
+
+		while (spotsPlaced < targetHealingSpots)
+		{
+			int x = (int)(Math.random() * size);
+			int y = (int)(Math.random() * size);
+
+			if (x == centerX && y == centerY)
+				continue;
+
+			if (hasEnemyAt(x, y))
+				continue;
+
+			if (hasHealingSpotAt(x, y))
+				continue;
+
+			double distance = calculateDistance(x, y, centerX, centerY);
+			double maxDistance = calculateDistance(0, 0, centerX, centerY);
+			double normalizedDistance = distance / maxDistance;
+
+			if (normalizedDistance < 0.2)
+				continue;
+
+			healing_spots.add(new HealingSpot(x, y));
+			spotsPlaced++;
+		}
+	}
+
 
 	private EnemyType selectEnemyType(double normalizedDistance)
 	{
@@ -100,11 +139,27 @@ public class GameMap
 		return false;
 	}
 
+	public boolean hasHealingSpotAt(int x, int y)
+	{
+		for (HealingSpot spot : healing_spots)
+			if (spot.getX() == x && spot.getY() == y)
+				return true;
+		return false;
+	}
+
 	public Enemy getEnemyAt(int x, int y)
 	{
 		for (EnemySpawn spawn : enemies)
 			if (spawn.getX() == x && spawn.getY() == y)
 				return spawn.getEnemy();
+		return null;
+	}
+
+	public HealingSpot getHealingSpotAt(int x, int y)
+	{
+		for (HealingSpot spot : healing_spots)
+			if (spot.getX() == x && spot.getY() == y)
+				return spot;
 		return null;
 	}
 
@@ -150,5 +205,15 @@ public class GameMap
 	public int getEnemyCount()
 	{
 		return enemies.size();
+	}
+
+	public int getHealingSpotsCount()
+	{
+		return healing_spots.size();
+	}
+
+	public List<HealingSpot> getHealingSpots()
+	{
+		return healing_spots;
 	}
 }

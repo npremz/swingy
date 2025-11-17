@@ -1,11 +1,12 @@
 package be.npremont.swingy.view;
 
-import be.npremont.swingy.model.Hero;
-import be.npremont.swingy.model.Direction;
-import be.npremont.swingy.model.HeroClass;
-import be.npremont.swingy.model.Enemy;
-import be.npremont.swingy.model.Item;
-import be.npremont.swingy.model.Combat;
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.game.Combat;
+
 import java.util.List;
 
 public interface IView
@@ -17,9 +18,13 @@ public interface IView
 	void displayVictory(int xpGained);
 	void displayDefeat();
 	void displayLevelUp(int newLevel);
+	void displayHealingSpot(boolean healed, int healAmount, int maxHp);
 	String getUserInput(String prompt);
 	Direction getDirection(Hero hero);
 	HeroClass chooseHeroClass();
 	boolean chooseFightOrRun(Hero hero, Enemy enemy);
 	boolean chooseEquipItem(Item newItem, Item currentItem);
+	
+	void clearScreen();
+	void waitForInput(String prompt);
 }

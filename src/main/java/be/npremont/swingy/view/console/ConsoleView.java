@@ -1,18 +1,20 @@
-package be.npremont.swingy.view;
+package be.npremont.swingy.view.console;
 
 import java.util.Scanner;
+
+import static be.npremont.swingy.view.console.TerminalUI.*;
+
 import java.util.List;
 
-import be.npremont.swingy.model.Direction;
-import be.npremont.swingy.model.Hero;
-import be.npremont.swingy.model.HeroClass;
-import be.npremont.swingy.model.HeroStats;
-import be.npremont.swingy.model.Enemy;
-import be.npremont.swingy.model.Item;
-import be.npremont.swingy.model.ItemType;
-import be.npremont.swingy.model.GameMap;
-
-import static be.npremont.swingy.view.TerminalUI.*;
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.enums.ItemType;
+import be.npremont.swingy.model.game.GameMap;
+import be.npremont.swingy.model.stats.HeroStats;
+import be.npremont.swingy.view.IView;
 
 public class ConsoleView implements IView 
 {
@@ -24,9 +26,22 @@ public class ConsoleView implements IView
 	}
 
 	@Override
+	public void clearScreen()
+	{
+		TerminalUI.clearScreen();
+	}
+
+	@Override
+	public void waitForInput(String prompt)
+	{
+		System.out.println(colorize(prompt, BRIGHT_CYAN));
+		scanner.nextLine();
+	}
+
+	@Override
 	public void displayMessage(String msg)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		int contentWidth = width - 4;
 		
 		java.util.List<String> lines = TerminalUI.wrapText(msg, contentWidth);
@@ -39,7 +54,7 @@ public class ConsoleView implements IView
 	@Override
 	public void displayGameStatus(Hero hero, int mapSize, double distanceFromCenter, int distanceToEdge)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
@@ -95,7 +110,7 @@ public class ConsoleView implements IView
 	@Override
 	public void displayHeroStats(Hero hero)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		HeroStats stats = hero.getStats();
 		
 		System.out.println();
@@ -103,26 +118,19 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createSectionHeader("HERO", BRIGHT_CYAN, width), BRIGHT_CYAN));
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_CYAN));
 		
-		// Nom et classe
 		String nameClass = colorize(hero.getName(), BOLD + BRIGHT_YELLOW) + " (" + stats.getHeroClass().getDisplayName() + ")";
 		System.out.println(TerminalUI.createBoxedText(nameClass, width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
-		
-		// Level
 		System.out.println(TerminalUI.createLabelValueLine("Level:", colorize("" + stats.getLevel(), BRIGHT_YELLOW), width));
-		
-		// XP bar
 		System.out.println(TerminalUI.createLabeledProgressBar("XP:", stats.getXp(), stats.getXpToNextLevel(), 20, CYAN));
-		
-		// HP bar avec détails
 		String hpColor = getHealthColorForStats(stats.getCurrentHp(), stats.getMaxHpWithItems());
 		System.out.println(TerminalUI.createLabeledProgressBar("HP:", stats.getCurrentHp(), stats.getMaxHpWithItems(), 20, hpColor));
 		
 		String hpDetails = "(Base: " + stats.getMaxHp();
 		if (stats.hasHelm())
 		{
-			hpDetails += " + " + colorize("" + stats.getHelm().getBonus(), GREEN) + " helm";
+			hpDetails += " + " + colorize("" + stats.getHelm().getFlatBonus(), GREEN) + " helm";
 		}
 		hpDetails += ")";
 		System.out.println(TerminalUI.createBoxedText(hpDetails, width));
@@ -131,7 +139,7 @@ public class ConsoleView implements IView
 		String atkValue = colorize("" + stats.getTotalAttack(), RED) + " (Base: " + stats.getAttack();
 		if (stats.hasWeapon())
 		{
-			atkValue += " + " + colorize("" + stats.getWeapon().getBonus(), GREEN) + " weapon";
+			atkValue += " + " + colorize("" + stats.getWeapon().getFlatBonus(), GREEN) + " weapon";
 		}
 		atkValue += ")";
 		System.out.println(TerminalUI.createLabelValueLine("ATK:", atkValue, width));
@@ -140,7 +148,7 @@ public class ConsoleView implements IView
 		String defValue = colorize("" + stats.getTotalDefense(), BLUE) + " (Base: " + stats.getDefense();
 		if (stats.hasArmor())
 		{
-			defValue += " + " + colorize("" + stats.getArmor().getBonus(), GREEN) + " armor";
+			defValue += " + " + colorize("" + stats.getArmor().getFlatBonus(), GREEN) + " armor";
 		}
 		defValue += ")";
 		System.out.println(TerminalUI.createLabelValueLine("DEF:", defValue, width));
@@ -150,19 +158,22 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
 		
 		// Equipment
-		displayEquipmentItemResponsive("Weapon:", stats.getWeapon(), width);
-		displayEquipmentItemResponsive("Armor:", stats.getArmor(), width);
-		displayEquipmentItemResponsive("Helm:", stats.getHelm(), width);
+		displayEquipmentItem("Weapon:", stats.getWeapon(), width);
+		displayEquipmentItem("Armor:", stats.getArmor(), width);
+		displayEquipmentItem("Helm:", stats.getHelm(), width);
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_CYAN));
 	}
 
-	private void displayEquipmentItemResponsive(String slot, Item item, int width)
+	private void displayEquipmentItem(String slot, Item item, int width)
 	{
 		if (item != null)
 		{
 			String rarityColor = getRarityColor(item.getRarity().name());
-			String itemInfo = colorize(item.getName(), rarityColor) + " (+" + item.getBonus() + " " + colorize(item.getRarity().name(), rarityColor) + ")";
+			String itemInfo = colorize(item.getName(), rarityColor) + 
+				" (+" + item.getFlatBonus() + " + " + 
+				String.format("%.1f", item.getPercentBonus()) + "% " + 
+				colorize(item.getRarity().name(), rarityColor) + ")";
 			System.out.println(TerminalUI.createLabelValueLine(slot, itemInfo, width));
 		}
 		else
@@ -174,7 +185,7 @@ public class ConsoleView implements IView
 	@Override
 	public void displayCombat(List<String> combatLog)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		drawCombatHeader();
 		System.out.println();
@@ -190,7 +201,7 @@ public class ConsoleView implements IView
 				System.out.println(TerminalUI.createBoxedText(wrappedLine, width));
 			}
 			
-			pauseAnimation(400);
+			pauseAnimation(150);
 		}
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), RED));
@@ -199,7 +210,7 @@ public class ConsoleView implements IView
 	@Override
 	public void displayVictory(int xpGained)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		drawVictoryBanner();
 		
@@ -211,7 +222,7 @@ public class ConsoleView implements IView
 	@Override
 	public void displayDefeat()
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		drawDefeatBanner();
 		
@@ -227,6 +238,40 @@ public class ConsoleView implements IView
 	}
 
 	@Override
+	public void displayHealingSpot(boolean healed, int healAmount, int maxHp)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_GREEN));
+		System.out.println(colorize(TerminalUI.createSectionHeader("HEALING SPOT", BRIGHT_GREEN, width), BRIGHT_GREEN));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_GREEN));
+		
+		if (healed)
+		{
+			System.out.println(TerminalUI.createBoxedText("✨ You found a healing fountain! ✨", width));
+			System.out.println(TerminalUI.createBoxedText("", width));
+			System.out.println(TerminalUI.createBoxedText("The magical waters restore your vitality.", width));
+			System.out.println(TerminalUI.createBoxedText("", width));
+			
+			String healMsg = "Recovered " + colorize("+" + healAmount + " HP", BRIGHT_GREEN) + 
+				" (60% of max HP)";
+			System.out.println(TerminalUI.createBoxedText(healMsg, width));
+			
+			System.out.println(TerminalUI.createBoxedText("", width));
+			System.out.println(TerminalUI.createBoxedText("The fountain's magic fades away...", width));
+		}
+		else
+		{
+			System.out.println(TerminalUI.createBoxedText("You found a healing fountain...", width));
+			System.out.println(TerminalUI.createBoxedText("", width));
+			System.out.println(TerminalUI.createBoxedText(colorize("But you are already at full health!", YELLOW), width));
+		}
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_GREEN));
+	}
+
+	@Override
 	public String getUserInput(String prompt)
 	{
 		System.out.print(prompt);
@@ -236,13 +281,13 @@ public class ConsoleView implements IView
 	@Override
 	public Direction getDirection(Hero hero)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
 		
-		String controls = colorize("N", BOLD) + "=North, " + colorize("S", BOLD) + "=South, " + 
-			colorize("E", BOLD) + "=East, " + colorize("W", BOLD) + "=West, " + 
+		String controls = colorize("W", BOLD) + "=North, " + colorize("S", BOLD) + "=South, " + 
+			colorize("D", BOLD) + "=East, " + colorize("A", BOLD) + "=West, " + 
 			colorize("I", BOLD) + "=Info, " + colorize("Q", BOLD) + "=Quit";
 		
 		// Wrappe les contrôles si nécessaire
@@ -260,13 +305,13 @@ public class ConsoleView implements IView
 
 		switch (input)
 		{
-			case "N":
+			case "W":
 				return Direction.NORTH;
 			case "S":
 				return Direction.SOUTH;
-			case "E":
+			case "D":
 				return Direction.EAST;
-			case "W":
+			case "A":
 				return Direction.WEST;
 			case "I":
 				displayHeroStats(hero);
@@ -286,7 +331,7 @@ public class ConsoleView implements IView
 	@Override
 	public HeroClass chooseHeroClass()
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
@@ -336,7 +381,7 @@ public class ConsoleView implements IView
 	@Override
 	public boolean chooseFightOrRun(Hero hero, Enemy enemy)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
@@ -388,7 +433,7 @@ public class ConsoleView implements IView
 	@Override
 	public boolean chooseEquipItem(Item newItem, Item currentItem)
 	{
-		int width = TerminalUI.getTerminalWidth();
+		int width = TerminalUI.TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
@@ -401,22 +446,31 @@ public class ConsoleView implements IView
 		String foundMsg = "You found: " + colorize(newItem.getName(), BOLD + rarityColor);
 		System.out.println(TerminalUI.createBoxedText(foundMsg, width));
 		
-		String bonusMsg = "+" + colorize("" + newItem.getBonus() + " " + newItem.getType().getStatName(), statColor) + 
+		String bonusMsg = "+" + newItem.getFlatBonus() + " + " + 
+			String.format("%.1f", newItem.getPercentBonus()) + "% " +
+			colorize(newItem.getType().getStatName(), statColor) + 
 			" (" + colorize(newItem.getRarity().name(), rarityColor) + ")";
 		System.out.println(TerminalUI.createBoxedText(bonusMsg, width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
-		drawItemComparison(
-			newItem.getType().getDisplayName(),
-			newItem.getType().getStatName(),
-			currentItem != null ? currentItem.getName() : null,
-			currentItem != null ? currentItem.getBonus() : 0,
-			currentItem != null ? currentItem.getRarity().name() : null,
-			newItem.getName(),
-			newItem.getBonus(),
-			newItem.getRarity().name()
-		);
+		// Comparison
+		System.out.println(colorize(TerminalUI.createSectionHeader("COMPARISON", CYAN, width), CYAN));
+		
+		if (currentItem != null)
+		{
+			String currentInfo = currentItem.getName() + " (+" + currentItem.getFlatBonus() + 
+				" + " + String.format("%.1f", currentItem.getPercentBonus()) + "%)";
+			System.out.println(TerminalUI.createBoxedText("Current: " + currentInfo, width));
+		}
+		else
+		{
+			System.out.println(TerminalUI.createBoxedText("Current: " + colorize("None", DIM), width));
+		}
+		
+		String newInfo = newItem.getName() + " (+" + newItem.getFlatBonus() + 
+			" + " + String.format("%.1f", newItem.getPercentBonus()) + "%)";
+		System.out.println(TerminalUI.createBoxedText("New: " + newInfo, width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		

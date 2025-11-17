@@ -1,12 +1,13 @@
 package be.npremont.swingy.controller;
 
-import be.npremont.swingy.model.GameMap;
-import be.npremont.swingy.model.Hero;
-import be.npremont.swingy.model.HeroClass;
-import be.npremont.swingy.model.Enemy;
-import be.npremont.swingy.model.Item;
-import be.npremont.swingy.model.Combat;
-import be.npremont.swingy.model.Direction;
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.game.Combat;
+import be.npremont.swingy.model.game.GameMap;
+import be.npremont.swingy.model.game.HealingSpot;
 import be.npremont.swingy.view.IView;
 
 public class GameController
@@ -56,11 +57,13 @@ public class GameController
 
 		while (running)
 		{
+			view.clearScreen();
+
 			double distanceFromCenter = game_map.getDistanceFromCenter(hero.getX(), hero.getY());
 			int distanceToEdge = game_map.getDistanceToEdge(hero.getX(), hero.getY());
 			
-			if (view instanceof be.npremont.swingy.view.ConsoleView)
-				((be.npremont.swingy.view.ConsoleView) view).displayMap(hero, game_map);
+			if (view instanceof be.npremont.swingy.view.console.ConsoleView)
+				((be.npremont.swingy.view.console.ConsoleView) view).displayMap(hero, game_map);
 			
 			view.displayGameStatus(hero, game_map.getSize(), distanceFromCenter, distanceToEdge);
 
@@ -81,6 +84,8 @@ public class GameController
 				view.displayMessage("\n🏆 LEVEL COMPLETE! 🏆");
 				view.displayMessage("You reached the edge of the map!");
 				
+				healOnLevelComplete();
+
 				if (!nextLevel())
 					running = false;
 				continue;
@@ -88,8 +93,14 @@ public class GameController
 
 			hero.move(dir.getDx(), dir.getDy());
 
-			if (game_map.hasEnemyAt(hero.getX(), hero.getY()))
+			if (game_map.hasHealingSpotAt(hero.getX(), hero.getY()))
 			{
+				handleHealingSpot(hero.getX(), hero.getY());
+			}
+			else if (game_map.hasEnemyAt(hero.getX(), hero.getY()))
+			{
+				view.clearScreen();
+
 				Enemy enemy = game_map.getEnemyAt(hero.getX(), hero.getY());
 				boolean fight = view.chooseFightOrRun(hero, enemy);
 
@@ -118,6 +129,57 @@ public class GameController
 		}
 	}
 
+	private void handleHealingSpot(int x, int y)
+	{
+		HealingSpot spot = game_map.getHealingSpotAt(x, y);
+		
+		if (spot == null || spot.isUsed())
+			return;
+
+		view.clearScreen();
+		
+		int oldHp = hero.getStats().getCurrentHp();
+		int maxHp = hero.getStats().getMaxHpWithItems();
+		
+		if (oldHp >= maxHp)
+		{
+			view.displayHealingSpot(false, 0, 0);
+			view.waitForInput("Press any key to continue...");
+			return;
+		}
+
+		hero.getStats().healPercentage(0.60);
+		spot.use();
+		
+		int newHp = hero.getStats().getCurrentHp();
+		int healedAmount = newHp - oldHp;
+		
+		view.displayHealingSpot(true, healedAmount, maxHp);
+		view.waitForInput("Press any key to continue...");
+	}
+
+	private void healOnLevelComplete()
+	{
+		int oldHp = hero.getStats().getCurrentHp();
+		int maxHp = hero.getStats().getMaxHpWithItems();
+		
+		hero.getStats().healPercentage(0.30);
+		
+		int newHp = hero.getStats().getCurrentHp();
+		int healedAmount = newHp - oldHp;
+		
+		if (healedAmount > 0)
+		{
+			view.displayMessage("\nYou rest and recover your strength...");
+			view.displayMessage("Healed " + healedAmount + " HP! (" + newHp + "/" + maxHp + ")");
+		}
+		else
+		{
+			view.displayMessage("\nYou are already at full health!");
+		}
+	}
+
+
 	private boolean attemptRun()
 	{
 		return Math.random() < 0.5;
@@ -125,6 +187,8 @@ public class GameController
 
 	private boolean handleCombat(Enemy enemy)
 	{
+		view.clearScreen();
+
 		Combat combat = new Combat(hero, enemy);
 		Combat.CombatResult result = combat.fight();
 		view.displayCombat(combat.getCombatLog());
@@ -141,6 +205,8 @@ public class GameController
 				view.displayLevelUp(hero.getStats().getLevel());
 				view.displayHeroStats(hero);
 			}
+
+			view.waitForInput("Press any key...");
 
 			if (result.hasLoot())
 				handleLoot(result.getLoot());

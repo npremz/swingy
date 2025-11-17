@@ -1,10 +1,11 @@
-package be.npremont.swingy.view;
+package be.npremont.swingy.view.console;
 
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-import be.npremont.swingy.model.Hero;
-import be.npremont.swingy.model.GameMap;
+
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.game.GameMap;
 
 public class TerminalUI
 {
@@ -31,9 +32,7 @@ public class TerminalUI
 	public static final String BOLD = "\u001B[1m";
 	public static final String DIM = "\u001B[2m";
 
-	private static int cachedTerminalWidth = -1;
-	private static long lastWidthCheck = 0;
-	private static final long WIDTH_CHECK_INTERVAL = 1000;
+	public static final int TERMINAL_WIDTH = 80;
 
 	public static String colorize(String text, String color)
 	{
@@ -64,70 +63,6 @@ public class TerminalUI
 		
 		String bar = "█".repeat(filled) + "░".repeat(width - filled);
 		return "[" + colorize(bar, CYAN) + "]";
-	}
-
-	public static int getTerminalWidth()
-	{
-		long currentTime = System.currentTimeMillis();
-		if (cachedTerminalWidth == -1 || (currentTime - lastWidthCheck) > WIDTH_CHECK_INTERVAL)
-		{
-			cachedTerminalWidth = detectTerminalWidth();
-			lastWidthCheck = currentTime;
-		}
-		
-		return cachedTerminalWidth;
-	}
-
-	private static int detectTerminalWidth()
-	{
-		try
-		{
-			String os = System.getProperty("os.name").toLowerCase();
-			Process process;
-			
-			if (os.contains("win"))
-			{
-				process = Runtime.getRuntime().exec("mode con");
-				java.io.BufferedReader reader = new java.io.BufferedReader(
-					new java.io.InputStreamReader(process.getInputStream())
-				);
-				
-				String line;
-				while ((line = reader.readLine()) != null)
-				{
-					if (line.contains("Columns") || line.contains("COL"))
-					{
-						String[] parts = line.split(":");
-						if (parts.length > 1)
-						{
-							String numStr = parts[1].trim().replaceAll("[^0-9]", "");
-							if (!numStr.isEmpty())
-								return Integer.parseInt(numStr);
-						}
-					}
-				}
-			}
-			else
-			{
-				process = Runtime.getRuntime().exec(new String[]{"sh", "-c", "tput cols"});
-				java.io.BufferedReader reader = new java.io.BufferedReader(
-					new java.io.InputStreamReader(process.getInputStream())
-				);
-				
-				String line = reader.readLine();
-				if (line != null && !line.isEmpty())
-					return Integer.parseInt(line.trim());
-			}
-		}
-		catch (Exception e)
-		{}
-		
-		return 80;
-	}
-
-	public static void refreshTerminalWidth()
-	{
-		cachedTerminalWidth = -1;
 	}
 
 	private static String getHealthColor(int current, int max)
@@ -261,7 +196,7 @@ public class TerminalUI
 
 	public static String createLabeledProgressBar(String label, int current, int max, int barWidth, String color)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		int contentWidth = width - 4;
 		
 		String valueText = current + "/" + max;
@@ -309,7 +244,7 @@ public class TerminalUI
 
 	public static void printTwoColumnTable(String[] labels, String[] values, String color)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
 		
@@ -323,7 +258,7 @@ public class TerminalUI
 
 	public static void printBoxedMessage(String message, String color)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		int contentWidth = width - 4;
 		
 		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
@@ -399,7 +334,7 @@ public class TerminalUI
 
 	public static void printBoxedTextWrapped(String text, String color)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		int contentWidth = width - 4;
 		
 		System.out.println(createBorderedLine("+", "-", "+", width));
@@ -415,7 +350,7 @@ public class TerminalUI
 
 	public static void drawMap(Hero hero, GameMap gameMap, Set<String> visitedPositions)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		int mapSize = gameMap.getSize();
 		int heroX = hero.getX();
 		int heroY = hero.getY();
@@ -466,7 +401,7 @@ public class TerminalUI
 										int currentBonus, String currentRarity, String newName, 
 										int newBonus, String newRarity)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println(createBorderedLine("+", "-", "+", width));
 		System.out.println(createSectionHeader("COMPARISON", CYAN, width));
@@ -517,41 +452,41 @@ public class TerminalUI
  
 	public static void drawCombatHeader()
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), RED));
-		System.out.println(colorize(createBoxedText("⚔️  COMBAT  ⚔️", width), RED));
+		System.out.println(colorize(createBoxedText("COMBAT", width), RED));
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), RED));
 	}
 
 	public static void drawVictoryBanner()
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), GREEN));
-		System.out.println(colorize(createBoxedText("🎉 VICTORY! 🎉", width), GREEN));
+		System.out.println(colorize(createBoxedText("VICTORY!", width), GREEN));
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), GREEN));
 	}
 
 	public static void drawDefeatBanner()
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_RED));
-		System.out.println(colorize(createBoxedText("💀 DEFEAT 💀", width), BRIGHT_RED));
+		System.out.println(colorize(createBoxedText("DEFEAT", width), BRIGHT_RED));
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_RED));
 	}
 
 	public static void drawLevelUpBanner(int level)
 	{
-		int width = getTerminalWidth();
+		int width = TERMINAL_WIDTH;
 		
 		System.out.println();
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
-		System.out.println(colorize(createBoxedText("⭐ LEVEL UP! ⭐", width), BRIGHT_YELLOW));
+		System.out.println(colorize(createBoxedText("LEVEL UP!", width), BRIGHT_YELLOW));
 		System.out.println(colorize(createBoxedText("You are now level " + level + "!", width), BRIGHT_YELLOW));
 		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
 	}
@@ -570,7 +505,29 @@ public class TerminalUI
 
 	public static void clearScreen()
 	{
-		System.out.print("\033[H\033[2J");
-		System.out.flush();
+		try
+		{
+			final String os = System.getProperty("os.name");
+			
+			if (os.contains("Windows"))
+			{
+				new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+			}
+			else
+			{
+				System.out.print("\033[H\033[2J");
+				System.out.flush();
+				
+				System.out.print("\033\143");
+				System.out.flush();
+			}
+		}
+		catch (Exception e)
+		{
+			for (int i = 0; i < 50; i++)
+			{
+				System.out.println();
+			}
+		}
 	}
 }

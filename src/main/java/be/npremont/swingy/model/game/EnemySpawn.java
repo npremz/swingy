@@ -1,4 +1,6 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.game;
+
+import be.npremont.swingy.model.entity.Enemy;
 
 public class EnemySpawn
 {

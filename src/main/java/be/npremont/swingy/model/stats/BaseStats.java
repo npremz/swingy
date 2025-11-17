@@ -1,4 +1,4 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.stats;
 
 public class BaseStats
 {

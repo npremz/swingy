@@ -1,8 +1,8 @@
 package be.npremont.swingy;
 
 import be.npremont.swingy.controller.GameController;
-import be.npremont.swingy.view.ConsoleView;
 import be.npremont.swingy.view.IView;
+import be.npremont.swingy.view.console.ConsoleView;
 
 public class App 
 {

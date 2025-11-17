@@ -1,4 +1,8 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.stats;
+
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.enums.ItemType;
 
 public class HeroStats
 {
@@ -68,6 +72,13 @@ public class HeroStats
 		this.current_hp = Math.min(getMaxHpWithItems(), this.current_hp + amount);
 	}
 
+	public void healPercentage(double percentage)
+	{
+		int maxHp = getMaxHpWithItems();
+		int healAmount = (int)Math.round(maxHp * percentage);
+		this.current_hp = Math.min(maxHp, this.current_hp + healAmount);
+	}
+
 	public void equipWeapon(Item item)
 	{
 		if (item.getType() != ItemType.WEAPON)
@@ -120,7 +131,10 @@ public class HeroStats
 	{
 		int total = attack;
 		if (weapon != null)
-			total += weapon.getBonus();
+		{
+			int bonus = weapon.calculateTotalBonus(attack);
+			total += bonus;
+		}
 		return total;
 	}
 
@@ -128,7 +142,10 @@ public class HeroStats
 	{
 		int total = defense;
 		if (armor != null)
-			total += armor.getBonus();
+		{
+			int bonus = armor.calculateTotalBonus(defense);
+			total += bonus;
+		}
 		return total;
 	}
 
@@ -136,8 +153,61 @@ public class HeroStats
 	{
 		int total = max_hp;
 		if (helm != null)
-			total += helm.getBonus();
+		{
+			int bonus = helm.calculateTotalBonus(max_hp);
+			total += bonus;
+		}
 		return total;
+	}
+
+	public double getCritChance()
+	{
+		double base_crit = 5.0;
+		
+		switch (hero_class)
+		{
+			case WARRIOR:
+				base_crit = 5.0;
+				break;
+			case ARCHER:
+				base_crit = 15.0;
+				break;
+			case ASSASSIN:
+				base_crit = 10.0;
+				break;
+		}
+		
+		return base_crit;
+	}
+
+	public double getCritMultiplier()
+	{
+		switch (hero_class)
+		{
+			case WARRIOR:
+				return 1.5;
+			case ARCHER:
+				return 1.75;
+			case ASSASSIN:
+				return 2.0;
+			default:
+				return 1.5;
+		}
+	}
+
+	public double getDamageReduction()
+	{
+		switch (hero_class)
+		{
+			case WARRIOR:
+				return 0.05;
+			case ARCHER:
+				return 0.0;
+			case ASSASSIN:
+				return 0.0;
+			default:
+				return 0.0;
+		}
 	}
 
 	// Getters 
@@ -206,7 +276,6 @@ public class HeroStats
 		return helm != null;
 	}
 
-	// Setter pour currentHp (utile pour les combats)
 	public void setCurrentHp(int hp)
 	{
 		this.current_hp = Math.max(0, Math.min(hp, getMaxHpWithItems()));

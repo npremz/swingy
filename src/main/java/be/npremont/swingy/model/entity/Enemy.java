@@ -1,4 +1,6 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.entity;
+
+import be.npremont.swingy.model.enums.EnemyType;
 
 public class Enemy
 {

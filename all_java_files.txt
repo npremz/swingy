@@ -1,0 +1,2460 @@
+=== ./src/main/java/be/npremont/swingy/model/stats/BaseStats.java ===
+package be.npremont.swingy.model.stats;
+
+public class BaseStats
+{
+	private final int hp;
+	private final int attack;
+	private final int defense;
+
+	public BaseStats(int hp, int attack, int defense)
+	{
+		this.hp = hp;
+		this.attack = attack;
+		this.defense = defense;
+	}
+
+	// Getters
+	public int getHp()
+	{
+		return hp;
+	}
+
+	public int getAttack()
+	{
+		return attack;
+	}
+
+	public int getDefense()
+	{
+		return defense;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/stats/GrowthRates.java ===
+package be.npremont.swingy.model.stats;
+
+public class GrowthRates
+{
+	private final double hp_multiplier;
+	private final double attack_multiplier;
+	private final double defense_multiplier;
+
+	public GrowthRates(double hp_multiplier, double attack_multiplier, double defense_multiplier)
+	{
+		this.hp_multiplier = hp_multiplier;
+		this.attack_multiplier = attack_multiplier;
+		this.defense_multiplier = defense_multiplier;
+	}
+
+	// Getters
+	public double getHpMultiplier()
+	{
+		return hp_multiplier;
+	}
+
+	public double getAttackMultiplier()
+	{
+		return attack_multiplier;
+	}
+
+	public double getDefenseMultiplier()
+	{
+		return defense_multiplier;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/stats/HeroStats.java ===
+package be.npremont.swingy.model.stats;
+
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.enums.ItemType;
+
+public class HeroStats
+{
+	private int max_hp;
+	private int current_hp;
+	private int attack;
+	private int defense;
+	private int xp;
+	private int level;
+	private HeroClass hero_class;
+
+	private Item weapon;
+	private Item armor;
+	private Item helm;
+
+	public HeroStats(HeroClass hero_class)
+	{
+		this.hero_class = hero_class;
+		this.level = 1;
+		this.xp = 0;
+
+		BaseStats base_stats = hero_class.getBaseStats();
+		this.max_hp = base_stats.getHp();
+		this.current_hp = this.max_hp;
+		this.attack = base_stats.getAttack();
+		this.defense = base_stats.getDefense();
+
+		this.weapon = null;
+		this.armor = null;
+		this.helm = null;
+	}
+
+	public void addXp(int amount)
+	{
+		this.xp += amount;
+
+		while (this.xp >= getXpToNextLevel())
+			levelUp();
+	}
+
+	private void levelUp()
+	{
+		double hp_ratio = (double) current_hp / max_hp;
+		GrowthRates growth = hero_class.getGrowthRates();
+
+		this.max_hp = (int) Math.round(max_hp * growth.getHpMultiplier());
+		this.attack = (int) Math.round(attack * growth.getAttackMultiplier());
+		this.defense = (int) Math.round(defense * growth.getDefenseMultiplier());
+
+		this.current_hp = (int) Math.round(hp_ratio * max_hp);
+
+		this.level++;
+	}
+
+	public int getXpToNextLevel()
+	{
+		return level * 1000 + (int) Math.pow(level - 1, 2) * 450;
+	}
+
+	public void takeDamage(int damage)
+	{
+		this.current_hp = Math.max(0, this.current_hp - damage);
+	}
+
+	public void heal(int amount)
+	{
+		this.current_hp = Math.min(getMaxHpWithItems(), this.current_hp + amount);
+	}
+
+	public void equipWeapon(Item item)
+	{
+		if (item.getType() != ItemType.WEAPON)
+			throw new IllegalArgumentException("Can only equip weapons in weapon slot");
+		this.weapon = item;
+	}
+
+	public void equipArmor(Item item)
+	{
+		if (item.getType() != ItemType.ARMOR)
+			throw new IllegalArgumentException("Can only equip armor in armor slot");
+		this.armor = item;
+	}
+
+	public void equipHelm(Item item)
+	{
+		if (item.getType() != ItemType.HELM)
+			throw new IllegalArgumentException("Can only equip helms in helm slot");
+
+		int currentHpWithoutHelm = this.current_hp;
+		int oldMaxHp = getMaxHpWithItems();
+
+		this.helm = item;
+
+		int newMaxHp = getMaxHpWithItems();
+		if (oldMaxHp > 0)
+		{
+			double ratio = (double) currentHpWithoutHelm / oldMaxHp;
+			this.current_hp = (int) Math.round(newMaxHp * ratio);
+		}
+	}
+
+	public void equipItem(Item item)
+	{
+		switch (item.getType())
+		{
+			case WEAPON:
+				equipWeapon(item);
+				break;
+			case ARMOR:
+				equipArmor(item);
+				break;
+			case HELM:
+				equipHelm(item);
+				break;
+		}
+	}
+
+	public int getTotalAttack()
+	{
+		int total = attack;
+		if (weapon != null)
+			total += weapon.getBonus();
+		return total;
+	}
+
+	public int getTotalDefense()
+	{
+		int total = defense;
+		if (armor != null)
+			total += armor.getBonus();
+		return total;
+	}
+
+	public int getMaxHpWithItems()
+	{
+		int total = max_hp;
+		if (helm != null)
+			total += helm.getBonus();
+		return total;
+	}
+
+	// Getters 
+	public int getMaxHp()
+	{
+		return max_hp;
+	}
+
+	public int getCurrentHp()
+	{
+		return current_hp;
+	}
+
+	public int getAttack()
+	{
+		return attack;
+	}
+
+	public int getDefense()
+	{
+		return defense;
+	}
+
+	public int getXp()
+	{
+		return xp;
+	}
+
+	public int getLevel()
+	{
+		return level;
+	}
+
+	public HeroClass getHeroClass()
+	{
+		return hero_class;
+	}
+
+	public Item getWeapon()
+	{
+		return weapon;
+	}
+
+	public Item getArmor()
+	{
+		return armor;
+	}
+
+	public Item getHelm()
+	{
+		return helm;
+	}
+
+	public boolean hasWeapon()
+	{
+		return weapon != null;
+	}
+
+	public boolean hasArmor()
+	{
+		return armor != null;
+	}
+
+	public boolean hasHelm()
+	{
+		return helm != null;
+	}
+
+	// Setter pour currentHp (utile pour les combats)
+	public void setCurrentHp(int hp)
+	{
+		this.current_hp = Math.max(0, Math.min(hp, getMaxHpWithItems()));
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/game/GameMap.java ===
+package be.npremont.swingy.model.game;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.enums.EnemyType;
+
+public class GameMap
+{
+	private int size;
+	private List<EnemySpawn> enemies;
+	private int centerX;
+	private int centerY;
+
+	public GameMap(int size, int heroLevel)
+	{
+		this.size = size;
+		this.centerX = size / 2;
+		this.centerY = size / 2;
+		this.enemies = new ArrayList<>();
+		generateEnemies(heroLevel);
+	}
+
+	private void generateEnemies(int heroLevel)
+	{
+		int totalCells = size * size;
+		int targetEnemies = (int)(totalCells * 0.25); // 25% Density
+		int enemiesPlaced = 0;
+
+		while (enemiesPlaced < targetEnemies)
+		{
+			int x = (int)(Math.random() * size);
+			int y = (int)(Math.random() * size);
+
+			if (x == centerX && y == centerY)
+				continue;
+
+			if (hasEnemyAt(x, y))
+				continue;
+
+			double distance = calculateDistance(x, y, centerX, centerY);
+			double maxDistance = calculateDistance(0, 0, centerX, centerY);
+			double normalizedDistance = distance / maxDistance; // 0.0 à 1.0
+
+			EnemyType type = selectEnemyType(normalizedDistance);
+			Enemy enemy = new Enemy(type, heroLevel);
+			enemies.add(new EnemySpawn(x, y, enemy));
+			enemiesPlaced++;
+		}
+	}
+
+	private EnemyType selectEnemyType(double normalizedDistance)
+	{
+		double roll = Math.random() * 100.0;
+
+		if (normalizedDistance < 0.33)
+		{
+			if (roll < 70.0)
+				return EnemyType.GOBLIN;
+			else if (roll < 95.0)
+				return EnemyType.ORC;
+			else
+				return EnemyType.DRAGON;
+		}
+		else if (normalizedDistance < 0.66)
+		{
+			if (roll < 40.0)
+				return EnemyType.GOBLIN;
+			else if (roll < 85.0)
+				return EnemyType.ORC;
+			else
+				return EnemyType.DRAGON;
+		}
+		else
+		{
+			if (roll < 15.0)
+				return EnemyType.GOBLIN;
+			else if (roll < 60.0)
+				return EnemyType.ORC;
+			else
+				return EnemyType.DRAGON;
+		}
+	}
+
+	private double calculateDistance(int x1, int y1, int x2, int y2)
+	{
+		int dx = x2 - x1;
+		int dy = y2 - y1;
+		return Math.sqrt(dx * dx + dy * dy);
+	}
+
+	public boolean isOutOfBounds(int x, int y)
+	{
+		return x < 0 || x >= size || y < 0 || y >= size;
+	}
+
+	public boolean hasEnemyAt(int x, int y)
+	{
+		for (EnemySpawn spawn : enemies)
+			if (spawn.getX() == x && spawn.getY() == y)
+				return true;
+		return false;
+	}
+
+	public Enemy getEnemyAt(int x, int y)
+	{
+		for (EnemySpawn spawn : enemies)
+			if (spawn.getX() == x && spawn.getY() == y)
+				return spawn.getEnemy();
+		return null;
+	}
+
+	public void removeEnemyAt(int x, int y)
+	{
+		enemies.removeIf(spawn -> spawn.getX() == x && spawn.getY() == y);
+	}
+
+	public double getDistanceFromCenter(int x, int y)
+	{
+		return calculateDistance(x, y, centerX, centerY);
+	}
+
+	public int getDistanceToEdge(int x, int y)
+	{
+		int distanceToTop = y;
+		int distanceToBottom = size - 1 - y;
+		int distanceToLeft = x;
+		int distanceToRight = size - 1 - x;
+
+		return Math.min(
+			Math.min(distanceToTop, distanceToBottom),
+			Math.min(distanceToLeft, distanceToRight)
+		);
+	}
+
+	// Getters
+	public int getSize()
+	{
+		return size;
+	}
+
+	public int getCenterX()
+	{
+		return centerX;
+	}
+
+	public int getCenterY()
+	{
+		return centerY;
+	}
+
+	public int getEnemyCount()
+	{
+		return enemies.size();
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/game/EnemySpawn.java ===
+package be.npremont.swingy.model.game;
+
+import be.npremont.swingy.model.entity.Enemy;
+
+public class EnemySpawn
+{
+	private final int x;
+	private final int y;
+	private final Enemy enemy;
+
+	public EnemySpawn(int x, int y, Enemy enemy)
+	{
+		this.x = x;
+		this.y = y;
+		this.enemy = enemy;
+	}
+
+	// Getters
+	public int getX()
+	{
+		return x;
+	}
+
+	public int getY()
+	{
+		return y;
+	}
+
+	public Enemy getEnemy()
+	{
+		return enemy;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/game/Combat.java ===
+package be.npremont.swingy.model.game;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.ItemType;
+
+public class Combat
+{
+	private Hero hero;
+	private Enemy enemy;
+	private List<String> combat_log;
+
+	public Combat(Hero hero, Enemy enemy)
+	{
+		this.hero = hero;
+		this.enemy = enemy;
+		this.combat_log = new ArrayList<>();
+	}
+
+	public CombatResult fight()
+	{
+		int round = 1;
+
+		while (hero.getStats().getCurrentHp() > 0 && enemy.isAlive())
+		{
+			combat_log.add("[Round " + round + "]");
+
+			int heroDamage = calculateDamage(hero.getStats().getTotalAttack(), enemy.getDefense());
+			enemy.takeDamage(heroDamage);
+			combat_log.add("You deal " + heroDamage + " damage! (Enemy: " + enemy.getCurrentHp() + "/" + enemy.getMaxHp() + " HP)");
+
+			if (!enemy.isAlive())
+			{
+				combat_log.add(enemy.getType().getDisplayName() + " is defeated!");
+				break;
+			}
+
+			int enemyDamage = calculateDamage(enemy.getAttack(), hero.getStats().getTotalDefense());
+			hero.getStats().takeDamage(enemyDamage);
+			combat_log.add(enemy.getType().getDisplayName() + " deals " + enemyDamage + " damage! (You: " + hero.getStats().getCurrentHp() + "/" + hero.getStats().getMaxHp() + " HP)");
+
+			if (hero.getStats().getCurrentHp() <= 0)
+			{
+				combat_log.add("You have been defeated...");
+				break;
+			}
+
+			combat_log.add("");
+			round++;
+		}
+
+		if (hero.getStats().getCurrentHp() > 0)
+			return new CombatResult(true, enemy.getXpReward(), rollLoot());
+		else
+			return new CombatResult(false, 0, null);
+	}
+
+	private int calculateDamage(int attack, int defense)
+	{
+		int baseDamage = Math.max(1, attack - defense);
+
+		double variance = 0.8 + (Math.random() * 0.4);
+		int finalDamage = (int)Math.round(baseDamage * variance);
+
+		return Math.max(1, finalDamage);
+	}
+
+	private Item rollLoot()
+	{
+		if (Math.random() < 0.40)
+		{
+			return null;
+		}
+
+		ItemType[] types = ItemType.values();
+		ItemType randomType = types[(int)(Math.random() * types.length)];
+
+		return Item.generateRandom(randomType);
+	}
+
+	// Getters
+	public List<String> getCombatLog()
+	{
+		return combat_log;
+	}
+
+	public static class CombatResult
+	{
+		private final boolean victory;
+		private final int xpGained;
+		private final Item loot;
+
+		public CombatResult(boolean victory, int xpGained, Item loot)
+		{
+			this.victory = victory;
+			this.xpGained = xpGained;
+			this.loot = loot;
+		}
+
+		// Getters
+		public boolean isVictory()
+		{
+			return victory;
+		}
+
+		public int getXpGained()
+		{
+			return xpGained;
+		}
+
+		public Item getLoot()
+		{
+			return loot;
+		}
+
+		public boolean hasLoot()
+		{
+			return loot != null;
+		}
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/enums/ItemType.java ===
+package be.npremont.swingy.model.enums;
+
+public enum ItemType
+{
+	WEAPON("Weapon", "Attack"),
+	ARMOR("Armor", "Defense"),
+	HELM("Helm", "HP");
+
+	private final String display_name;
+	private final String stat_name;
+
+	ItemType(String display_name, String stat_name)
+	{
+		this.display_name = display_name;
+		this.stat_name = stat_name;
+	}
+
+	// Getters
+	public String getDisplayName()
+	{
+		return display_name;
+	}
+
+	public String getStatName()
+	{
+		return stat_name;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/enums/ItemRarity.java ===
+package be.npremont.swingy.model.enums;
+
+public enum ItemRarity
+{
+	COMMON(
+		"Common",
+		5,
+		10,
+		35.0
+	),
+	UNCOMMON(
+		"Uncommon",
+		11,
+		20,
+		15.0
+	),
+	RARE(
+		"Rare",
+		21,
+		35,
+		7.0
+	),
+	EPIC(
+		"Epic",
+		36,
+		50,
+		2.5
+	),
+	LEGENDARY(
+		"Legendary",
+		51,
+		75,
+		0.5
+	);
+
+	private final String display_name;
+	private final int min_bonus;
+	private final int max_bonus;
+	private final double drop_chance;
+
+	ItemRarity(String display_name, int min_bonus, int max_bonus, double drop_chance)
+	{
+		this.display_name = display_name;
+		this.min_bonus = min_bonus;
+		this.max_bonus = max_bonus;
+		this.drop_chance = drop_chance;
+	}
+
+	// Getters
+	public String getDisplayName()
+	{
+		return display_name;
+	}
+
+	public int getMinBonus()
+	{
+		return min_bonus;
+	}
+
+	public int getMaxBonus()
+	{
+		return max_bonus;
+	}
+
+	public double getDropChance()
+	{
+		return drop_chance;
+	}
+
+	public int generateBonus()
+	{
+		return min_bonus + (int)(Math.random() * (max_bonus - min_bonus + 1));
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/enums/HeroClass.java ===
+package be.npremont.swingy.model.enums;
+
+import be.npremont.swingy.model.stats.BaseStats;
+import be.npremont.swingy.model.stats.GrowthRates;
+
+public enum HeroClass
+{
+	WARRIOR(
+		"Warrior",
+		new BaseStats(150, 12, 12),
+		new GrowthRates(1.15, 1.08, 1.12)
+	),
+	ARCHER(
+		"Archer",
+		new BaseStats(120, 15, 8),
+		new GrowthRates(1.1, 1.1, 1.1)
+	),
+	ASSASSIN(
+		"Assassin",
+		new BaseStats(100, 18, 6),
+		new GrowthRates(1.05, 1.15, 1.05)
+	);
+
+	private final String display_name;
+	private final BaseStats base_stats;
+	private final GrowthRates growth_rates;
+
+	HeroClass(String display_name, BaseStats base_stats, GrowthRates growth_rates)
+	{
+		this.display_name = display_name;
+		this.base_stats = base_stats;
+		this.growth_rates = growth_rates;
+	}
+
+	//Getter
+	public String getDisplayName()
+	{
+		return display_name;
+	}
+
+	public BaseStats getBaseStats()
+	{
+		return base_stats;
+	}
+
+	public GrowthRates getGrowthRates()
+	{
+		return growth_rates;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/enums/Direction.java ===
+package be.npremont.swingy.model.enums;
+
+public enum Direction
+{
+	NORTH(0, -1),
+	SOUTH(0, 1),
+	EAST(1, 0),
+	WEST(-1, 0);
+
+	private int dx;
+	private int dy;
+
+	Direction(int dx, int dy)
+	{
+		this.dx = dx;
+		this.dy = dy;
+	}
+
+	// Getters
+	public int getDx()
+	{
+		return this.dx;
+	}
+
+	public int getDy()
+	{
+		return this.dy;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/enums/EnemyType.java ===
+package be.npremont.swingy.model.enums;
+
+public enum EnemyType
+{
+	GOBLIN(
+		"Goblin",
+		30,
+		8,
+		3,
+		340
+	),
+	ORC(
+		"Orc",
+		50,
+		12,
+		7,
+		500
+	),
+	DRAGON(
+		"Dragon",
+		80,
+		18,
+		12,
+		1500
+	);
+
+	private final String display_name;
+	private final int base_hp;
+	private final int base_attack;
+	private final int base_defense;
+	private final int xp_reward;
+
+	EnemyType(String display_name, int base_hp, int base_attack, int base_defense, int xp_reward)
+	{
+		this.display_name = display_name;
+		this.base_hp = base_hp;
+		this.base_attack = base_attack;
+		this.base_defense = base_defense;
+		this.xp_reward = xp_reward;
+	}
+
+	// Getters
+	public String getDisplayName()
+	{
+		return display_name;
+	}
+
+	public int getBaseHp()
+	{
+		return base_hp;
+	}
+
+	public int getBaseAttack()
+	{
+		return base_attack;
+	}
+
+	public int getBaseDefense()
+	{
+		return base_defense;
+	}
+
+	public int getXpReward()
+	{
+		return xp_reward;
+	}
+
+	// Getters with relative scaling
+	public int getScaledHp(int heroLevel)
+	{
+		return (int)(base_hp * (1 + (heroLevel - 1) * 0.25));
+	}
+
+	public int getScaledAttack(int heroLevel)
+	{
+		return (int)(base_attack * (1 + (heroLevel - 1) * 0.25));
+	}
+
+	public int getScaledDefense(int heroLevel)
+	{
+		return (int)(base_defense * (1 + (heroLevel - 1) * 0.25));
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/entity/Enemy.java ===
+package be.npremont.swingy.model.entity;
+
+import be.npremont.swingy.model.enums.EnemyType;
+
+public class Enemy
+{
+	private final EnemyType type;
+	private int current_hp;
+	private final int max_hp;
+	private final int attack;
+	private final int defense;
+	private final int xp_reward;
+
+	public Enemy(EnemyType type, int heroLevel)
+	{
+		this.type = type;
+		this.max_hp = type.getScaledHp(heroLevel);
+		this.current_hp = this.max_hp;
+		this.attack = type.getScaledAttack(heroLevel);
+		this.defense = type.getScaledDefense(heroLevel);
+		this.xp_reward = type.getXpReward();
+	}
+
+	public void takeDamage(int damage)
+	{
+		this.current_hp = Math.max(0, this.current_hp - damage);
+	}
+
+	public boolean isAlive()
+	{
+		return current_hp > 0;
+	}
+
+	// Getters
+	public EnemyType getType()
+	{
+		return type;
+	}
+
+	public int getCurrentHp()
+	{
+		return current_hp;
+	}
+
+	public int getMaxHp()
+	{
+		return max_hp;
+	}
+
+	public int getAttack()
+	{
+		return attack;
+	}
+
+	public int getDefense()
+	{
+		return defense;
+	}
+
+	public int getXpReward()
+	{
+		return xp_reward;
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/entity/Hero.java ===
+package be.npremont.swingy.model.entity;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.stats.HeroStats;
+
+public class Hero
+{
+	private String 		name;
+	private int			x;
+	private int			y;
+	private HeroStats	stats;
+	private Set<String>	visitedPositions;
+
+	public Hero(String name, HeroClass hero_class, int startX, int startY)
+	{
+		this.name = name;
+		this.x = startX;
+		this.y = startY;
+		this.stats = new HeroStats(hero_class);
+		this.visitedPositions = new HashSet<>();
+		this.visitedPositions.add(startX + "," + startY);
+	}
+
+	public void move(int dx, int dy)
+	{
+		this.x += dx;
+		this.y += dy;
+		this.visitedPositions.add(this.x + "," + this.y);
+	}
+
+	// Getters
+	public String getName()
+	{
+		return name;
+	}
+
+	public int getX()
+	{
+		return x;
+	}
+
+	public int getY()
+	{
+		return y;
+	}
+
+	public HeroStats getStats()
+	{
+		return stats;
+	}
+
+	public Set<String> getVisitedPositions()
+	{
+		return visitedPositions;
+	}
+
+	public void clearVisitedPositions()
+	{
+		visitedPositions.clear();
+		visitedPositions.add(x + "," + y);
+	}
+}
+=== ./src/main/java/be/npremont/swingy/model/entity/Item.java ===
+package be.npremont.swingy.model.entity;
+
+import be.npremont.swingy.model.enums.ItemRarity;
+import be.npremont.swingy.model.enums.ItemType;
+
+public class Item
+{
+	private final ItemType type;
+	private final ItemRarity rarity;
+	private final String name;
+	private final int bonus;
+
+	public Item(ItemType type, ItemRarity rarity, String name, int bonus)
+	{
+		this.type = type;
+		this.rarity = rarity;
+		this.name = name;
+		this.bonus = bonus;
+	}
+
+	// Factory method 
+	public static Item generateRandom(ItemType type)
+	{
+		ItemRarity rarity = rollRarity();
+		int bonus = rarity.generateBonus();
+		String name = generateName(type, rarity);
+		
+		return new Item(type, rarity, name, bonus);
+	}
+
+	private static ItemRarity rollRarity()
+	{
+		double roll = Math.random() * 100.0;
+		double cumulative = 0.0;
+
+		for (ItemRarity rarity : ItemRarity.values())
+		{
+			cumulative += rarity.getDropChance();
+			if (roll < cumulative)
+			{
+				return rarity;
+			}
+		}
+
+		return ItemRarity.COMMON;
+	}
+
+	private static String generateName(ItemType type, ItemRarity rarity)
+	{
+		String[] prefixes = getPrefixes(rarity);
+		String[] bases = getBases(type);
+		
+		String prefix = prefixes[(int)(Math.random() * prefixes.length)];
+		String base = bases[(int)(Math.random() * bases.length)];
+		
+		return prefix + " " + base;
+	}
+
+	private static String[] getPrefixes(ItemRarity rarity)
+	{
+		switch (rarity)
+		{
+			case COMMON:
+				return new String[]{"Old", "Rusty", "Worn", "Crude"};
+			case UNCOMMON:
+				return new String[]{"Sturdy", "Fine", "Quality", "Solid"};
+			case RARE:
+				return new String[]{"Superior", "Enchanted", "Blessed", "Reinforced"};
+			case EPIC:
+				return new String[]{"Masterwork", "Exquisite", "Royal", "Ancient"};
+			case LEGENDARY:
+				return new String[]{"Legendary", "Mythical", "Divine", "Celestial"};
+			default:
+				return new String[]{"Strange"};
+		}
+	}
+
+	private static String[] getBases(ItemType type)
+	{
+		switch (type)
+		{
+			case WEAPON:
+				return new String[]{"Sword", "Blade", "Axe", "Mace", "Dagger"};
+			case ARMOR:
+				return new String[]{"Plate", "Mail", "Vest", "Cuirass", "Breastplate"};
+			case HELM:
+				return new String[]{"Helmet", "Crown", "Hood", "Cap", "Circlet"};
+			default:
+				return new String[]{"Item"};
+		}
+	}
+
+	// Getters
+	public ItemType getType()
+	{
+		return type;
+	}
+
+	public ItemRarity getRarity()
+	{
+		return rarity;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public int getBonus()
+	{
+		return bonus;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "[" + rarity.getDisplayName().toUpperCase() + "] " + name + " (+" + bonus + " " + type.getStatName() + ")";
+	}
+}
+=== ./src/main/java/be/npremont/swingy/App.java ===
+package be.npremont.swingy;
+
+import be.npremont.swingy.controller.GameController;
+import be.npremont.swingy.view.IView;
+import be.npremont.swingy.view.console.ConsoleView;
+
+public class App 
+{
+	public static void main(String[] args)
+	{
+		if (args.length != 1)
+		{
+			System.out.println("Usage: java -jar swingy.jar [console|gui]");
+			return;
+		}
+		
+		String mode = args[0];
+		IView view;
+		
+		if (mode.equals("console"))
+		{
+			System.out.println("Starting in console mode...");
+			view = new ConsoleView();
+		}
+		else if (mode.equals("gui"))
+		{
+			System.out.println("Starting in GUI mode...");
+			view = new ConsoleView();
+		}
+		else
+		{
+			System.out.println("Invalid mode. Use 'console' or 'gui'");
+			return;
+		}
+
+		GameController game_controller = new GameController(view);
+		game_controller.start();
+	}
+}
+=== ./src/main/java/be/npremont/swingy/controller/GameController.java ===
+package be.npremont.swingy.controller;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.game.Combat;
+import be.npremont.swingy.model.game.GameMap;
+import be.npremont.swingy.view.IView;
+
+public class GameController
+{
+	private Hero hero;
+	private GameMap game_map;
+	private IView view;
+
+	public GameController(IView view)
+	{
+		this.view = view;
+	}
+
+	public void start()
+	{
+		String name = view.getUserInput("Enter hero name: ");
+
+		HeroClass heroClass = view.chooseHeroClass();
+		view.displayMessage("\nYou chose " + heroClass.getDisplayName() + "!");
+
+		int heroLevel = 1;
+		int map_size = calculateMapSize(heroLevel);
+
+		game_map = new GameMap(map_size, heroLevel);
+
+		int center = map_size / 2;
+		hero = new Hero(name, heroClass, center, center);
+
+
+		view.displayHeroStats(hero);
+
+		view.displayMessage("\nGame started! Reach the edge of the map to win!");
+		view.displayMessage("Enemies: " + game_map.getEnemyCount() + " scattered across the map.");
+		view.displayMessage("You cannot see them... be careful!");
+
+		gameLoop();
+	}
+
+	private int calculateMapSize(int level)
+	{
+		return (level - 1) * 5 + 10 - (level % 2);
+	}
+
+	private void gameLoop()
+	{
+		boolean running = true;
+
+		while (running)
+		{
+			view.clearScreen();
+
+			double distanceFromCenter = game_map.getDistanceFromCenter(hero.getX(), hero.getY());
+			int distanceToEdge = game_map.getDistanceToEdge(hero.getX(), hero.getY());
+			
+			if (view instanceof be.npremont.swingy.view.console.ConsoleView)
+				((be.npremont.swingy.view.console.ConsoleView) view).displayMap(hero, game_map);
+			
+			view.displayGameStatus(hero, game_map.getSize(), distanceFromCenter, distanceToEdge);
+
+			Direction dir = view.getDirection(hero);
+
+			if (dir == null)
+			{
+				view.displayMessage("Terminating the session.");
+				running = false;
+				continue;
+			}
+
+			int new_x = hero.getX() + dir.getDx();
+			int new_y = hero.getY() + dir.getDy();
+
+			if (game_map.isOutOfBounds(new_x, new_y))
+			{
+				view.displayMessage("\n🏆 LEVEL COMPLETE! 🏆");
+				view.displayMessage("You reached the edge of the map!");
+				
+				if (!nextLevel())
+					running = false;
+				continue;
+			}
+
+			hero.move(dir.getDx(), dir.getDy());
+
+			if (game_map.hasEnemyAt(hero.getX(), hero.getY()))
+			{
+				view.clearScreen();
+
+				Enemy enemy = game_map.getEnemyAt(hero.getX(), hero.getY());
+				boolean fight = view.chooseFightOrRun(hero, enemy);
+
+				if (!fight)
+				{
+					if (attemptRun())
+					{
+						view.displayMessage("\nYou successfully escaped!");
+						view.displayMessage("You return to your previous position.");
+						
+						hero.move(-dir.getDx(), -dir.getDy());
+					}
+					else
+					{
+						view.displayMessage("\nYou failed to run away!");
+						view.displayMessage("You must fight!");
+						
+						if (!handleCombat(enemy))
+							running = false;
+					}
+				}
+				else
+					if (!handleCombat(enemy))
+						running = false;
+			}
+		}
+	}
+
+	private boolean attemptRun()
+	{
+		return Math.random() < 0.5;
+	}
+
+	private boolean handleCombat(Enemy enemy)
+	{
+		view.clearScreen();
+
+		Combat combat = new Combat(hero, enemy);
+		Combat.CombatResult result = combat.fight();
+		view.displayCombat(combat.getCombatLog());
+
+		if (result.isVictory())
+		{
+			view.displayVictory(result.getXpGained());
+			game_map.removeEnemyAt(hero.getX(), hero.getY());
+			int oldLevel = hero.getStats().getLevel();
+			hero.getStats().addXp(result.getXpGained());
+
+			if (hero.getStats().getLevel() > oldLevel)
+			{
+				view.displayLevelUp(hero.getStats().getLevel());
+				view.displayHeroStats(hero);
+			}
+
+			view.waitForInput("Press any key...");
+
+			if (result.hasLoot())
+				handleLoot(result.getLoot());
+
+			return true;
+		}
+		else
+		{
+			view.displayDefeat();
+			return false;
+		}
+	}
+
+	private void handleLoot(Item item)
+	{
+		Item currentItem = null;
+		
+		switch (item.getType())
+		{
+			case WEAPON:
+				currentItem = hero.getStats().getWeapon();
+				break;
+			case ARMOR:
+				currentItem = hero.getStats().getArmor();
+				break;
+			case HELM:
+				currentItem = hero.getStats().getHelm();
+				break;
+		}
+
+		boolean equip = view.chooseEquipItem(item, currentItem);
+
+		if (equip)
+		{
+			hero.getStats().equipItem(item);
+			view.displayMessage("\nYou equipped " + item.toString());
+		}
+		else
+		{
+			view.displayMessage("\nYou left the item behind.");
+		}
+	}
+
+	private boolean nextLevel()
+	{
+		view.displayMessage("\n=== Prepare for the next level ===");
+		
+		int newLevel = hero.getStats().getLevel();
+		int new_map_size = calculateMapSize(newLevel);
+
+		view.displayMessage("New map size: " + new_map_size + "x" + new_map_size);
+		
+		String input = view.getUserInput("Continue? (Y/N): ").toUpperCase();
+
+		if (input.equals("Y"))
+		{
+			game_map = new GameMap(new_map_size, newLevel);
+
+			int center = new_map_size / 2;
+			hero.move(center - hero.getX(), center - hero.getY());
+			hero.clearVisitedPositions();
+
+			view.displayMessage("\nNew level started!");
+			view.displayMessage("Enemies: " + game_map.getEnemyCount());
+			
+			return true;
+		}
+		else
+		{
+			view.displayMessage("\nThanks for playing!");
+			return false;
+		}
+	}
+}
+=== ./src/main/java/be/npremont/swingy/view/console/TerminalUI.java ===
+package be.npremont.swingy.view.console;
+
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.game.GameMap;
+
+public class TerminalUI
+{
+	// ANSI Color codes
+	public static final String RESET = "\u001B[0m";
+	public static final String BLACK = "\u001B[30m";
+	public static final String RED = "\u001B[31m";
+	public static final String GREEN = "\u001B[32m";
+	public static final String YELLOW = "\u001B[33m";
+	public static final String BLUE = "\u001B[34m";
+	public static final String PURPLE = "\u001B[35m";
+	public static final String CYAN = "\u001B[36m";
+	public static final String WHITE = "\u001B[37m";
+	
+	// Bright colors
+	public static final String BRIGHT_RED = "\u001B[91m";
+	public static final String BRIGHT_GREEN = "\u001B[92m";
+	public static final String BRIGHT_YELLOW = "\u001B[93m";
+	public static final String BRIGHT_BLUE = "\u001B[94m";
+	public static final String BRIGHT_PURPLE = "\u001B[95m";
+	public static final String BRIGHT_CYAN = "\u001B[96m";
+	
+	// Styles
+	public static final String BOLD = "\u001B[1m";
+	public static final String DIM = "\u001B[2m";
+
+	public static final int TERMINAL_WIDTH = 80;
+
+	public static String colorize(String text, String color)
+	{
+		return color + text + RESET;
+	}
+
+	public static String drawProgressBar(int current, int max, int width)
+	{
+		if (max <= 0)
+			return "[" + "?".repeat(width) + "]";
+		
+		int filled = (int)((double)current / max * width);
+		filled = Math.min(filled, width);
+		
+		String bar = "█".repeat(filled) + "░".repeat(width - filled);
+		
+		String color = getHealthColor(current, max);
+		return "[" + colorize(bar, color) + "]";
+	}
+
+	public static String drawXpBar(int current, int max, int width)
+	{
+		if (max <= 0)
+			return "[" + "?".repeat(width) + "]";
+		
+		int filled = (int)((double)current / max * width);
+		filled = Math.min(filled, width);
+		
+		String bar = "█".repeat(filled) + "░".repeat(width - filled);
+		return "[" + colorize(bar, CYAN) + "]";
+	}
+
+	private static String getHealthColor(int current, int max)
+	{
+		double percentage = (double)current / max;
+		
+		if (percentage <= 0.3)
+			return BRIGHT_RED;
+		else if (percentage <= 0.6)
+			return YELLOW;
+		else
+			return GREEN;
+	}
+
+	public static String getRarityColor(String rarity)
+	{
+		switch (rarity.toUpperCase())
+		{
+			case "COMMON":
+				return WHITE;
+			case "UNCOMMON":
+				return GREEN;
+			case "RARE":
+				return BLUE;
+			case "EPIC":
+				return PURPLE;
+			case "LEGENDARY":
+				return BRIGHT_YELLOW;
+			default:
+				return RESET;
+		}
+	}
+
+	private static int getVisibleLength(String text)
+	{
+		String withoutAnsi = text.replaceAll("\u001B\\[[0-9;]*m", "");
+		return withoutAnsi.length();
+	}
+
+	public static String createLine(String character, int width)
+	{
+		StringBuilder line = new StringBuilder();
+		for (int i = 0; i < width; i++)
+			line.append(character);
+		return line.toString();
+	}
+
+	public static String createBorderedLine(String leftBorder, String content, String rightBorder, int width)
+	{
+		int contentWidth = width - leftBorder.length() - rightBorder.length();
+		
+		if (contentWidth <= 0)
+			return leftBorder + rightBorder;
+		
+		StringBuilder line = new StringBuilder();
+		for (int i = 0; i < contentWidth; i++)
+			line.append(content);
+		
+		return leftBorder + line.toString() + rightBorder;
+	}
+
+	public static String createBoxedText(String text, int width)
+	{
+		int contentWidth = width - 4;
+		
+		if (contentWidth <= 0)
+			return "| |";
+		
+		String centered = centerText(text, contentWidth);
+		return "| " + centered + " |";
+	}
+
+	public static String createSectionHeader(String title, String color, int width)
+	{
+		int titleLength = getVisibleLength(title);
+		int padding = (width - titleLength - 6) / 2;
+		
+		if (padding < 1)
+		{
+			return createBoxedText(title, width);
+		}
+		
+		StringBuilder left = new StringBuilder();
+		StringBuilder right = new StringBuilder();
+		
+		for (int i = 0; i < padding; i++)
+		{
+			left.append("=");
+			right.append("=");
+		}
+		
+		if ((width - titleLength - 4) % 2 != 0)
+		{
+			right.append("=");
+		}
+		
+		return colorize("| " + left.toString() + " " + title + " " + right.toString() + " |", color);
+	}
+
+	public static String createLabelValueLine(String label, String value, int width)
+	{
+		int contentWidth = width - 4; 
+		
+		if (contentWidth <= 0)
+		{
+			return "| |";
+		}
+		
+		int labelLength = getVisibleLength(label);
+		int valueLength = getVisibleLength(value);
+		
+		if (labelLength + valueLength + 1 > contentWidth)
+		{
+			int maxLabelLength = contentWidth - valueLength - 4;
+			if (maxLabelLength > 0)
+			{
+				label = label.substring(0, Math.min(label.length(), maxLabelLength)) + "...";
+				labelLength = maxLabelLength + 3;
+			}
+		}
+		
+		int spacing = contentWidth - labelLength - valueLength;
+		StringBuilder spaces = new StringBuilder();
+		for (int i = 0; i < spacing; i++)
+		{
+			spaces.append(" ");
+		}
+		
+		return "| " + label + spaces.toString() + value + " |";
+	}
+
+	public static String createLabeledProgressBar(String label, int current, int max, int barWidth, String color)
+	{
+		int width = TERMINAL_WIDTH;
+		int contentWidth = width - 4;
+		
+		String valueText = current + "/" + max;
+		int valueLength = valueText.length();
+		int labelLength = getVisibleLength(label);
+		
+		int availableSpace = contentWidth - labelLength - valueLength - 2; 
+		int actualBarWidth = Math.min(barWidth, Math.max(5, availableSpace));
+		
+		String bar = drawProgressBarCustom(current, max, actualBarWidth, color);
+		
+		StringBuilder spaces = new StringBuilder();
+		int spacing = contentWidth - labelLength - getVisibleLength(bar) - valueLength - 2;
+		for (int i = 0; i < Math.max(0, spacing); i++)
+		{
+			spaces.append(" ");
+		}
+		
+		return "| " + label + " " + bar + spaces.toString() + " " + valueText + " |";
+	}
+
+	private static String drawProgressBarCustom(int current, int max, int width, String color)
+	{
+		if (max <= 0)
+		{
+			StringBuilder bar = new StringBuilder("[");
+			for (int i = 0; i < width; i++)
+			{
+				bar.append("?");
+			}
+			bar.append("]");
+			return bar.toString();
+		}
+		
+		int filled = (int)((double)current / max * width);
+		filled = Math.min(filled, width);
+		
+		StringBuilder bar = new StringBuilder("[");
+		bar.append(colorize("█".repeat(filled), color));
+		bar.append("░".repeat(width - filled));
+		bar.append("]");
+		
+		return bar.toString();
+	}
+
+	public static void printTwoColumnTable(String[] labels, String[] values, String color)
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
+		
+		for (int i = 0; i < labels.length && i < values.length; i++)
+		{
+			System.out.println(createLabelValueLine(labels[i], values[i], width));
+		}
+		
+		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
+	}
+
+	public static void printBoxedMessage(String message, String color)
+	{
+		int width = TERMINAL_WIDTH;
+		int contentWidth = width - 4;
+		
+		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
+		
+		java.util.List<String> lines = wrapText(message, contentWidth);
+		for (String line : lines)
+		{
+			System.out.println(createBoxedText(line, width));
+		}
+		
+		System.out.println(colorize(createBorderedLine("+", "-", "+", width), color));
+	}
+
+	public static String centerText(String text, int width)
+	{
+		int textLength = getVisibleLength(text);
+		
+		if (textLength >= width)
+			return text.substring(0, Math.min(text.length(), width));
+		
+		int leftPadding = (width - textLength) / 2;
+		int rightPadding = width - textLength - leftPadding;
+		
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < leftPadding; i++)
+			result.append(" ");
+		result.append(text);
+		for (int i = 0; i < rightPadding; i++)
+			result.append(" ");
+		
+		return result.toString();
+	}
+
+	public static List<String> wrapText(String text, int maxWidth)
+	{
+		List<String> lines = new ArrayList<>();
+		
+		if (text == null || text.isEmpty())
+		{
+			return lines;
+		}
+		
+		String[] words = text.split(" ");
+		StringBuilder currentLine = new StringBuilder();
+		
+		for (String word : words)
+		{
+			int wordLength = getVisibleLength(word);
+			int currentLength = getVisibleLength(currentLine.toString());
+			
+			if (currentLength == 0)
+			{
+				currentLine.append(word);
+			}
+			else if (currentLength + 1 + wordLength <= maxWidth)
+			{
+				currentLine.append(" ").append(word);
+			}
+			else
+			{
+				lines.add(currentLine.toString());
+				currentLine = new StringBuilder(word);
+			}
+		}
+		
+		if (currentLine.length() > 0)
+		{
+			lines.add(currentLine.toString());
+		}
+		
+		return lines;
+	}
+
+	public static void printBoxedTextWrapped(String text, String color)
+	{
+		int width = TERMINAL_WIDTH;
+		int contentWidth = width - 4;
+		
+		System.out.println(createBorderedLine("+", "-", "+", width));
+		
+		java.util.List<String> lines = wrapText(text, contentWidth);
+		for (String line : lines)
+		{
+			System.out.println(createBoxedText(colorize(line, color), width));
+		}
+		
+		System.out.println(createBorderedLine("+", "-", "+", width));
+	}
+
+	public static void drawMap(Hero hero, GameMap gameMap, Set<String> visitedPositions)
+	{
+		int width = TERMINAL_WIDTH;
+		int mapSize = gameMap.getSize();
+		int heroX = hero.getX();
+		int heroY = hero.getY();
+		
+		int maxViewWidth = (width - 4) / 2;
+		int viewRadius = Math.min(7, maxViewWidth / 2);
+		
+		int startX = Math.max(0, heroX - viewRadius);
+		int startY = Math.max(0, heroY - viewRadius);
+		int endX = Math.min(mapSize - 1, heroX + viewRadius);
+		int endY = Math.min(mapSize - 1, heroY + viewRadius);
+
+		int mapWidth = (endX - startX + 1) * 2 + 2;
+		
+		System.out.println();
+		System.out.println(createBorderedLine("+", "-", "+", mapWidth));
+		
+		for (int y = startY; y <= endY; y++)
+		{
+			StringBuilder line = new StringBuilder("| ");
+			for (int x = startX; x <= endX; x++)
+			{
+				if (x == heroX && y == heroY)
+				{
+					line.append(colorize("@", BRIGHT_GREEN)).append(" ");
+				}
+				else if (visitedPositions.contains(x + "," + y))
+				{
+					line.append(colorize("·", DIM + WHITE)).append(" ");
+				}
+				else if (x == 0 || x == mapSize - 1 || y == 0 || y == mapSize - 1)
+				{
+					line.append(colorize("#", YELLOW)).append(" ");
+				}
+				else
+				{
+					line.append("  ");
+				}
+			}
+			line.append("|");
+			System.out.println(line.toString());
+		}
+		
+		System.out.println(createBorderedLine("+", "-", "+", mapWidth));
+	}
+
+	public static void drawItemComparison(String itemType, String statName, String currentName, 
+										int currentBonus, String currentRarity, String newName, 
+										int newBonus, String newRarity)
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println(createBorderedLine("+", "-", "+", width));
+		System.out.println(createSectionHeader("COMPARISON", CYAN, width));
+		System.out.println(createBorderedLine("+", "-", "+", width));
+		
+		// Item type
+		String itemLine = itemType + ": " + 
+			(currentName != null ? currentName : colorize("None", DIM)) + 
+			" → " + newName;
+		System.out.println(createBoxedText(itemLine, width));
+		
+		// Bonus comparison
+		String currentBonusStr = currentBonus > 0 ? "+" + currentBonus : colorize("None", DIM);
+		String diff = "";
+		
+		if (currentBonus > 0)
+		{
+			int diffValue = newBonus - currentBonus;
+			if (diffValue > 0)
+			{
+				diff = " " + colorize("(+" + diffValue + ")", GREEN);
+			}
+			else if (diffValue < 0)
+			{
+				diff = " " + colorize("(" + diffValue + ")", RED);
+			}
+			else
+			{
+				diff = " " + colorize("(=)", YELLOW);
+			}
+		}
+		else
+		{
+			diff = " " + colorize("(+" + newBonus + ")", GREEN);
+		}
+		
+		String bonusLine = statName + " Bonus: " + currentBonusStr + " → +" + newBonus + diff;
+		System.out.println(createBoxedText(bonusLine, width));
+		
+		// Rarity comparison
+		String rarityLine = "Rarity: " + 
+			(currentRarity != null ? currentRarity : colorize("None", DIM)) + 
+			" → " + newRarity;
+		System.out.println(createBoxedText(rarityLine, width));
+		
+		System.out.println(createBorderedLine("+", "-", "+", width));
+	}
+ 
+	public static void drawCombatHeader()
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), RED));
+		System.out.println(colorize(createBoxedText("COMBAT", width), RED));
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), RED));
+	}
+
+	public static void drawVictoryBanner()
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), GREEN));
+		System.out.println(colorize(createBoxedText("VICTORY!", width), GREEN));
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), GREEN));
+	}
+
+	public static void drawDefeatBanner()
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+		System.out.println(colorize(createBoxedText("DEFEAT", width), BRIGHT_RED));
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+	}
+
+	public static void drawLevelUpBanner(int level)
+	{
+		int width = TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		System.out.println(colorize(createBoxedText("LEVEL UP!", width), BRIGHT_YELLOW));
+		System.out.println(colorize(createBoxedText("You are now level " + level + "!", width), BRIGHT_YELLOW));
+		System.out.println(colorize(createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+	}
+
+	public static void pauseAnimation(int milliseconds)
+	{
+		try
+		{
+			Thread.sleep(milliseconds);
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	public static void clearScreen()
+	{
+		try
+		{
+			final String os = System.getProperty("os.name");
+			
+			if (os.contains("Windows"))
+			{
+				new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+			}
+			else
+			{
+				System.out.print("\033[H\033[2J");
+				System.out.flush();
+				
+				System.out.print("\033\143");
+				System.out.flush();
+			}
+		}
+		catch (Exception e)
+		{
+			for (int i = 0; i < 50; i++)
+			{
+				System.out.println();
+			}
+		}
+	}
+}
+=== ./src/main/java/be/npremont/swingy/view/console/ConsoleView.java ===
+package be.npremont.swingy.view.console;
+
+import java.util.Scanner;
+
+import static be.npremont.swingy.view.console.TerminalUI.*;
+
+import java.util.List;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.enums.ItemType;
+import be.npremont.swingy.model.game.GameMap;
+import be.npremont.swingy.model.stats.HeroStats;
+import be.npremont.swingy.view.IView;
+
+public class ConsoleView implements IView 
+{
+	private Scanner scanner;
+
+	public ConsoleView()
+	{
+		this.scanner = new Scanner(System.in);
+	}
+
+	@Override
+	public void clearScreen()
+	{
+		TerminalUI.clearScreen();
+	}
+
+	@Override
+	public void waitForInput(String prompt)
+	{
+		System.out.println(colorize(prompt, BRIGHT_CYAN));
+		scanner.nextLine();
+	}
+
+	@Override
+	public void displayMessage(String msg)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		int contentWidth = width - 4;
+		
+		java.util.List<String> lines = TerminalUI.wrapText(msg, contentWidth);
+		for (String line : lines)
+		{
+			System.out.println(line);
+		}
+	}
+
+	@Override
+	public void displayGameStatus(Hero hero, int mapSize, double distanceFromCenter, int distanceToEdge)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
+		System.out.println(colorize(TerminalUI.createSectionHeader("STATUS", CYAN, width), CYAN));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
+		
+		// Position
+		String posValue = colorize("(" + hero.getX() + ", " + hero.getY() + ")", BRIGHT_CYAN);
+		System.out.println(TerminalUI.createLabelValueLine("Position:", posValue, width));
+		
+		// Map size
+		String mapValue = colorize(mapSize + "x" + mapSize, WHITE);
+		System.out.println(TerminalUI.createLabelValueLine("Map size:", mapValue, width));
+		
+		// Distance to edge
+		String distColor = distanceToEdge <= 3 ? BRIGHT_GREEN : YELLOW;
+		String distValue = colorize("" + distanceToEdge, distColor);
+		System.out.println(TerminalUI.createLabelValueLine("Distance to edge:", distValue, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
+		
+		// Stats compactes
+		HeroStats stats = hero.getStats();
+		
+		// HP bar
+		String hpColor = getHealthColorForStats(stats.getCurrentHp(), stats.getMaxHpWithItems());
+		System.out.println(TerminalUI.createLabeledProgressBar("HP:", stats.getCurrentHp(), stats.getMaxHpWithItems(), 15, hpColor));
+		
+		// XP bar
+		System.out.println(TerminalUI.createLabeledProgressBar("XP:", stats.getXp(), stats.getXpToNextLevel(), 15, CYAN));
+		
+		// Stats en ligne
+		String statsLine = "LVL: " + colorize("" + stats.getLevel(), BRIGHT_YELLOW) + 
+			" | ATK: " + colorize("" + stats.getTotalAttack(), RED) + 
+			" | DEF: " + colorize("" + stats.getTotalDefense(), BLUE);
+		System.out.println(TerminalUI.createBoxedText(statsLine, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
+	}
+
+	private String getHealthColorForStats(int current, int max)
+	{
+		double percentage = (double)current / max;
+		
+		if (percentage <= 0.3)
+			return BRIGHT_RED;
+		else if (percentage <= 0.6)
+			return YELLOW;
+		else
+			return GREEN;
+	}
+
+	@Override
+	public void displayHeroStats(Hero hero)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		HeroStats stats = hero.getStats();
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_CYAN));
+		System.out.println(colorize(TerminalUI.createSectionHeader("HERO", BRIGHT_CYAN, width), BRIGHT_CYAN));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_CYAN));
+		
+		String nameClass = colorize(hero.getName(), BOLD + BRIGHT_YELLOW) + " (" + stats.getHeroClass().getDisplayName() + ")";
+		System.out.println(TerminalUI.createBoxedText(nameClass, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
+		System.out.println(TerminalUI.createLabelValueLine("Level:", colorize("" + stats.getLevel(), BRIGHT_YELLOW), width));
+		System.out.println(TerminalUI.createLabeledProgressBar("XP:", stats.getXp(), stats.getXpToNextLevel(), 20, CYAN));
+		String hpColor = getHealthColorForStats(stats.getCurrentHp(), stats.getMaxHpWithItems());
+		System.out.println(TerminalUI.createLabeledProgressBar("HP:", stats.getCurrentHp(), stats.getMaxHpWithItems(), 20, hpColor));
+		
+		String hpDetails = "(Base: " + stats.getMaxHp();
+		if (stats.hasHelm())
+		{
+			hpDetails += " + " + colorize("" + stats.getHelm().getBonus(), GREEN) + " helm";
+		}
+		hpDetails += ")";
+		System.out.println(TerminalUI.createBoxedText(hpDetails, width));
+		
+		// Attack
+		String atkValue = colorize("" + stats.getTotalAttack(), RED) + " (Base: " + stats.getAttack();
+		if (stats.hasWeapon())
+		{
+			atkValue += " + " + colorize("" + stats.getWeapon().getBonus(), GREEN) + " weapon";
+		}
+		atkValue += ")";
+		System.out.println(TerminalUI.createLabelValueLine("ATK:", atkValue, width));
+		
+		// Defense
+		String defValue = colorize("" + stats.getTotalDefense(), BLUE) + " (Base: " + stats.getDefense();
+		if (stats.hasArmor())
+		{
+			defValue += " + " + colorize("" + stats.getArmor().getBonus(), GREEN) + " armor";
+		}
+		defValue += ")";
+		System.out.println(TerminalUI.createLabelValueLine("DEF:", defValue, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
+		System.out.println(colorize(TerminalUI.createSectionHeader("EQUIPMENT", CYAN, width), CYAN));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
+		
+		// Equipment
+		displayEquipmentItem("Weapon:", stats.getWeapon(), width);
+		displayEquipmentItem("Armor:", stats.getArmor(), width);
+		displayEquipmentItem("Helm:", stats.getHelm(), width);
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_CYAN));
+	}
+
+	private void displayEquipmentItem(String slot, Item item, int width)
+	{
+		if (item != null)
+		{
+			String rarityColor = getRarityColor(item.getRarity().name());
+			String itemInfo = colorize(item.getName(), rarityColor) + " (+" + item.getBonus() + " " + colorize(item.getRarity().name(), rarityColor) + ")";
+			System.out.println(TerminalUI.createLabelValueLine(slot, itemInfo, width));
+		}
+		else
+		{
+			System.out.println(TerminalUI.createLabelValueLine(slot, colorize("None", DIM), width));
+		}
+	}
+
+	@Override
+	public void displayCombat(List<String> combatLog)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		drawCombatHeader();
+		System.out.println();
+		
+		for (String line : combatLog)
+		{
+			// Wrappe chaque ligne de combat
+			int contentWidth = width - 4;
+			java.util.List<String> wrappedLines = TerminalUI.wrapText(line, contentWidth);
+			
+			for (String wrappedLine : wrappedLines)
+			{
+				System.out.println(TerminalUI.createBoxedText(wrappedLine, width));
+			}
+			
+			pauseAnimation(150);
+		}
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), RED));
+	}
+
+	@Override
+	public void displayVictory(int xpGained)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		drawVictoryBanner();
+		
+		String message = "You gained " + colorize("+" + xpGained + " XP", BRIGHT_CYAN) + "!";
+		System.out.println(TerminalUI.createBoxedText(message, width));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), GREEN));
+	}
+
+	@Override
+	public void displayDefeat()
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		drawDefeatBanner();
+		
+		System.out.println(TerminalUI.createBoxedText("You have been slain...", width));
+		System.out.println(TerminalUI.createBoxedText(colorize("GAME OVER", BRIGHT_RED), width));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+	}
+
+	@Override
+	public void displayLevelUp(int newLevel)
+	{
+		drawLevelUpBanner(newLevel);
+	}
+
+	@Override
+	public String getUserInput(String prompt)
+	{
+		System.out.print(prompt);
+		return scanner.nextLine();
+	}
+
+	@Override
+	public Direction getDirection(Hero hero)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
+		
+		String controls = colorize("N", BOLD) + "=North, " + colorize("S", BOLD) + "=South, " + 
+			colorize("E", BOLD) + "=East, " + colorize("W", BOLD) + "=West, " + 
+			colorize("I", BOLD) + "=Info, " + colorize("Q", BOLD) + "=Quit";
+		
+		// Wrappe les contrôles si nécessaire
+		int contentWidth = width - 4;
+		java.util.List<String> wrappedControls = TerminalUI.wrapText(controls, contentWidth);
+		
+		for (String line : wrappedControls)
+		{
+			System.out.println(TerminalUI.createBoxedText(line, width));
+		}
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
+		
+		String input = getUserInput(colorize("> ", BRIGHT_GREEN)).toUpperCase();
+
+		switch (input)
+		{
+			case "N":
+				return Direction.NORTH;
+			case "S":
+				return Direction.SOUTH;
+			case "E":
+				return Direction.EAST;
+			case "W":
+				return Direction.WEST;
+			case "I":
+				displayHeroStats(hero);
+				return getDirection(hero);
+			case "X":
+				hero.getStats().addXp(800);
+				displayMessage(colorize("Added 800xp.", YELLOW));
+				return getDirection(hero);
+			case "Q":
+				return null;
+			default:
+				displayMessage(colorize("Invalid input", RED));
+				return getDirection(hero);
+		}
+	}
+
+	@Override
+	public HeroClass chooseHeroClass()
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createSectionHeader("Choose Your Class", BRIGHT_YELLOW, width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		
+		// Warrior
+		System.out.println(TerminalUI.createBoxedText(colorize("1. WARRIOR", BOLD + RED), width));
+		System.out.println(TerminalUI.createBoxedText("   High HP and Defense", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=150, ATK=12, DEF=15", width));
+		System.out.println(TerminalUI.createBoxedText("   Growth: HP+15%, ATK+8%, DEF+12%", width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		// Archer
+		System.out.println(TerminalUI.createBoxedText(colorize("2. ARCHER", BOLD + GREEN), width));
+		System.out.println(TerminalUI.createBoxedText("   Balanced Stats", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=100, ATK=15, DEF=10", width));
+		System.out.println(TerminalUI.createBoxedText("   Growth: HP+10%, ATK+10%, DEF+10%", width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		// Assassin
+		System.out.println(TerminalUI.createBoxedText(colorize("3. ASSASSIN", BOLD + PURPLE), width));
+		System.out.println(TerminalUI.createBoxedText("   High Attack, Low Defense", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=80, ATK=20, DEF=8", width));
+		System.out.println(TerminalUI.createBoxedText("   Growth: HP+5%, ATK+15%, DEF+5%", width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+
+		String input = getUserInput("Enter your choice (1-3): ");
+
+		switch (input)
+		{
+			case "1":
+				return HeroClass.WARRIOR;
+			case "2":
+				return HeroClass.ARCHER;
+			case "3":
+				return HeroClass.ASSASSIN;
+			default:
+				displayMessage(colorize("Invalid choice. Please try again.", RED));
+				return chooseHeroClass();
+		}
+	}
+
+	@Override
+	public boolean chooseFightOrRun(Hero hero, Enemy enemy)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+		System.out.println(colorize(TerminalUI.createSectionHeader("ENEMY ENCOUNTER!", BRIGHT_RED, width), BRIGHT_RED));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+		
+		String encounterMsg = "A wild " + colorize(enemy.getType().getDisplayName(), BOLD + RED) + " appears!";
+		System.out.println(TerminalUI.createBoxedText(encounterMsg, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+		System.out.println(colorize(TerminalUI.createSectionHeader("Enemy Stats", RED, width), RED));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+		
+		System.out.println(TerminalUI.createLabelValueLine("HP:", colorize("" + enemy.getMaxHp(), RED), width));
+		System.out.println(TerminalUI.createLabelValueLine("ATK:", colorize("" + enemy.getAttack(), RED), width));
+		System.out.println(TerminalUI.createLabelValueLine("DEF:", colorize("" + enemy.getDefense(), BLUE), width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+		System.out.println(colorize(TerminalUI.createSectionHeader("Your Stats", GREEN, width), GREEN));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+		
+		HeroStats stats = hero.getStats();
+		String hpColor = getHealthColorForStats(stats.getCurrentHp(), stats.getMaxHpWithItems());
+		System.out.println(TerminalUI.createLabeledProgressBar("HP:", stats.getCurrentHp(), stats.getMaxHpWithItems(), 15, hpColor));
+		System.out.println(TerminalUI.createLabelValueLine("ATK:", colorize("" + stats.getTotalAttack(), RED), width));
+		System.out.println(TerminalUI.createLabelValueLine("DEF:", colorize("" + stats.getTotalDefense(), BLUE), width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+		
+		System.out.println(TerminalUI.createBoxedText(colorize("1.", BOLD) + " FIGHT", width));
+		System.out.println(TerminalUI.createBoxedText(colorize("2.", BOLD) + " RUN (50% chance)", width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
+
+		String input = getUserInput(colorize("> ", BRIGHT_GREEN));
+
+		switch (input)
+		{
+			case "1":
+				return true;
+			case "2":
+				return false;
+			default:
+				displayMessage(colorize("Invalid choice. Please choose 1 or 2.", RED));
+				return chooseFightOrRun(hero, enemy);
+		}
+	}
+
+	@Override
+	public boolean chooseEquipItem(Item newItem, Item currentItem)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createSectionHeader("LOOT FOUND!", BRIGHT_YELLOW, width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		
+		String rarityColor = getRarityColor(newItem.getRarity().name());
+		String statColor = getStatColorForItem(newItem.getType());
+		
+		String foundMsg = "You found: " + colorize(newItem.getName(), BOLD + rarityColor);
+		System.out.println(TerminalUI.createBoxedText(foundMsg, width));
+		
+		String bonusMsg = "+" + colorize("" + newItem.getBonus() + " " + newItem.getType().getStatName(), statColor) + 
+			" (" + colorize(newItem.getRarity().name(), rarityColor) + ")";
+		System.out.println(TerminalUI.createBoxedText(bonusMsg, width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		drawItemComparison(
+			newItem.getType().getDisplayName(),
+			newItem.getType().getStatName(),
+			currentItem != null ? currentItem.getName() : null,
+			currentItem != null ? currentItem.getBonus() : 0,
+			currentItem != null ? currentItem.getRarity().name() : null,
+			newItem.getName(),
+			newItem.getBonus(),
+			newItem.getRarity().name()
+		);
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		System.out.println(TerminalUI.createBoxedText(colorize("1.", BOLD) + " EQUIP new item", width));
+		System.out.println(TerminalUI.createBoxedText(colorize("2.", BOLD) + " KEEP current " + (currentItem != null ? "item" : "slot empty"), width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+
+		String input = getUserInput(colorize("> ", BRIGHT_GREEN));
+
+		switch (input)
+		{
+			case "1":
+				return true;
+			case "2":
+				return false;
+			default:
+				displayMessage(colorize("Invalid choice. Please choose 1 or 2.", RED));
+				return chooseEquipItem(newItem, currentItem);
+		}
+	}
+
+	private String getStatColorForItem(ItemType type)
+	{
+		switch (type)
+		{
+			case WEAPON:
+				return RED;
+			case ARMOR:
+				return BLUE;
+			case HELM:
+				return GREEN;
+			default:
+				return WHITE;
+		}
+	}
+
+	public void displayMap(Hero hero, GameMap gameMap)
+	{
+		drawMap(hero, gameMap, hero.getVisitedPositions());
+	}
+}
+=== ./src/main/java/be/npremont/swingy/view/IView.java ===
+package be.npremont.swingy.view;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.Direction;
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.game.Combat;
+
+import java.util.List;
+
+public interface IView
+{
+	void displayMessage(String msg);
+	void displayGameStatus(Hero hero, int mapSize, double distanceFromCenter, int distanceToEdge);
+	void displayHeroStats(Hero hero);
+	void displayCombat(List<String> combatLog);
+	void displayVictory(int xpGained);
+	void displayDefeat();
+	void displayLevelUp(int newLevel);
+	String getUserInput(String prompt);
+	Direction getDirection(Hero hero);
+	HeroClass chooseHeroClass();
+	boolean chooseFightOrRun(Hero hero, Enemy enemy);
+	boolean chooseEquipItem(Item newItem, Item currentItem);
+	
+	void clearScreen();
+	void waitForInput(String prompt);
+}
+=== ./src/test/java/be/npremont/swingy/AppTest.java ===
+package be.npremont.swingy;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+/**
+ * Unit test for simple App.
+ */
+public class AppTest 
+    extends TestCase
+{
+    /**
+     * Create the test case
+     *
+     * @param testName name of the test case
+     */
+    public AppTest( String testName )
+    {
+        super( testName );
+    }
+
+    /**
+     * @return the suite of tests being tested
+     */
+    public static Test suite()
+    {
+        return new TestSuite( AppTest.class );
+    }
+
+    /**
+     * Rigourous Test :-)
+     */
+    public void testApp()
+    {
+        assertTrue( true );
+    }
+}

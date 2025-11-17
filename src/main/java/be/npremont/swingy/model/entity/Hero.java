@@ -1,7 +1,10 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.entity;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.stats.HeroStats;
 
 public class Hero
 {

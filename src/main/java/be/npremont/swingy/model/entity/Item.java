@@ -1,28 +1,34 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.entity;
+
+import be.npremont.swingy.model.enums.ItemRarity;
+import be.npremont.swingy.model.enums.ItemType;
 
 public class Item
 {
 	private final ItemType type;
 	private final ItemRarity rarity;
 	private final String name;
-	private final int bonus;
+	private final int flat_bonus;
+	private final double percent_bonus;
 
-	public Item(ItemType type, ItemRarity rarity, String name, int bonus)
+	public Item(ItemType type, ItemRarity rarity, String name, int flat_bonus, double percent_bonus)
 	{
 		this.type = type;
 		this.rarity = rarity;
 		this.name = name;
-		this.bonus = bonus;
+		this.flat_bonus = flat_bonus;
+		this.percent_bonus = percent_bonus;
 	}
 
 	// Factory method 
 	public static Item generateRandom(ItemType type)
 	{
 		ItemRarity rarity = rollRarity();
-		int bonus = rarity.generateBonus();
+		int flat_bonus = rarity.generateFlatBonus();
+		double percent_bonus = rarity.generatePercentBonus();
 		String name = generateName(type, rarity);
 		
-		return new Item(type, rarity, name, bonus);
+		return new Item(type, rarity, name, flat_bonus, percent_bonus);
 	}
 
 	private static ItemRarity rollRarity()
@@ -87,6 +93,11 @@ public class Item
 		}
 	}
 
+	public int calculateTotalBonus(int baseStat)
+	{
+		return (int)Math.round((baseStat + flat_bonus) * (1 + percent_bonus / 100.0)) - baseStat;
+	}
+
 	// Getters
 	public ItemType getType()
 	{
@@ -103,14 +114,21 @@ public class Item
 		return name;
 	}
 
-	public int getBonus()
+	public int getFlatBonus()
 	{
-		return bonus;
+		return flat_bonus;
+	}
+
+	public double getPercentBonus()
+	{
+		return percent_bonus;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "[" + rarity.getDisplayName().toUpperCase() + "] " + name + " (+" + bonus + " " + type.getStatName() + ")";
+		return "[" + rarity.getDisplayName().toUpperCase() + "] " + name + 
+			" (+" + flat_bonus + " + " + String.format("%.1f", percent_bonus) + "% " + 
+			type.getStatName() + ")";
 	}
 }

@@ -1,20 +1,23 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.enums;
+
+import be.npremont.swingy.model.stats.BaseStats;
+import be.npremont.swingy.model.stats.GrowthRates;
 
 public enum HeroClass
 {
 	WARRIOR(
 		"Warrior",
-		new BaseStats(150, 12, 12),
-		new GrowthRates(1.15, 1.08, 1.12)
+		new BaseStats(120, 10, 12),
+		new GrowthRates(1.12, 1.08, 1.12)
 	),
 	ARCHER(
 		"Archer",
-		new BaseStats(120, 15, 8),
-		new GrowthRates(1.1, 1.1, 1.1)
+		new BaseStats(100, 12, 8),
+		new GrowthRates(1.1, 1.12, 1.08)
 	),
 	ASSASSIN(
 		"Assassin",
-		new BaseStats(100, 18, 6),
+		new BaseStats(80, 15, 6),
 		new GrowthRates(1.05, 1.15, 1.05)
 	);
 

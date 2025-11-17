@@ -1,7 +1,12 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.game;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import be.npremont.swingy.model.entity.Enemy;
+import be.npremont.swingy.model.entity.Hero;
+import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.enums.ItemType;
 
 public class Combat
 {
@@ -24,7 +29,13 @@ public class Combat
 		{
 			combat_log.add("[Round " + round + "]");
 
-			int heroDamage = calculateDamage(hero.getStats().getTotalAttack(), enemy.getDefense());
+			int heroDamage = calculateDamage(
+				hero.getStats().getTotalAttack(), 
+				enemy.getDefense(),
+				hero.getStats().getCritChance(),
+				hero.getStats().getCritMultiplier(),
+				true
+			);
 			enemy.takeDamage(heroDamage);
 			combat_log.add("You deal " + heroDamage + " damage! (Enemy: " + enemy.getCurrentHp() + "/" + enemy.getMaxHp() + " HP)");
 
@@ -34,9 +45,18 @@ public class Combat
 				break;
 			}
 
-			int enemyDamage = calculateDamage(enemy.getAttack(), hero.getStats().getTotalDefense());
+			int enemyDamage = calculateDamage(
+				enemy.getAttack(), 
+				hero.getStats().getTotalDefense(),
+				5.0,
+				1.5,
+				false
+			);
+			
+			enemyDamage = (int)(enemyDamage * (1 - hero.getStats().getDamageReduction()));
+			
 			hero.getStats().takeDamage(enemyDamage);
-			combat_log.add(enemy.getType().getDisplayName() + " deals " + enemyDamage + " damage! (You: " + hero.getStats().getCurrentHp() + "/" + hero.getStats().getMaxHp() + " HP)");
+			combat_log.add(enemy.getType().getDisplayName() + " deals " + enemyDamage + " damage! (You: " + hero.getStats().getCurrentHp() + "/" + hero.getStats().getMaxHpWithItems() + " HP)");
 
 			if (hero.getStats().getCurrentHp() <= 0)
 			{
@@ -54,15 +74,24 @@ public class Combat
 			return new CombatResult(false, 0, null);
 	}
 
-	private int calculateDamage(int attack, int defense)
+	private int calculateDamage(int attack, int defense, double critChance, double critMultiplier, boolean canCrit)
 	{
-		int baseDamage = Math.max(1, attack - defense);
-
-		double variance = 0.8 + (Math.random() * 0.4);
-		int finalDamage = (int)Math.round(baseDamage * variance);
-
-		return Math.max(1, finalDamage);
+		double defenseMultiplier = 1.0 - (defense / (defense + 100.0));
+		
+		double baseDamage = attack * defenseMultiplier;
+		
+		double variance = 0.85 + (Math.random() * 0.30);
+		double finalDamage = baseDamage * variance;
+		
+		if (canCrit && Math.random() * 100.0 < critChance)
+		{
+			finalDamage *= critMultiplier;
+			combat_log.add("CRITICAL HIT!");
+		}
+		
+		return Math.max(1, (int)Math.round(finalDamage));
 	}
+
 
 	private Item rollLoot()
 	{

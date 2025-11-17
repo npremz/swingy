@@ -1,4 +1,4 @@
-package be.npremont.swingy.model;
+package be.npremont.swingy.model.enums;
 
 public enum EnemyType
 {
@@ -68,16 +68,16 @@ public enum EnemyType
 	// Getters with relative scaling
 	public int getScaledHp(int heroLevel)
 	{
-		return (int)(base_hp * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_hp * (1 + (heroLevel - 1) * 0.15));
 	}
 
 	public int getScaledAttack(int heroLevel)
 	{
-		return (int)(base_attack * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_attack * (1 + (heroLevel - 1) * 0.15));
 	}
 
 	public int getScaledDefense(int heroLevel)
 	{
-		return (int)(base_defense * (1 + (heroLevel - 1) * 0.25));
+		return (int)(base_defense * (1 + (heroLevel - 1) * 0.15));
 	}
 }
