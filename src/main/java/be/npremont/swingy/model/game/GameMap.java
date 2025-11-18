@@ -5,6 +5,7 @@ import java.util.List;
 
 import be.npremont.swingy.model.entity.Enemy;
 import be.npremont.swingy.model.enums.EnemyType;
+import be.npremont.swingy.model.event.EventManager;
 
 public class GameMap
 {
@@ -13,6 +14,7 @@ public class GameMap
 	private List<HealingSpot> healing_spots;
 	private int centerX;
 	private int centerY;
+	private EventManager eventManager;
 
 	public GameMap(int size, int heroLevel)
 	{
@@ -21,8 +23,11 @@ public class GameMap
 		this.centerY = size / 2;
 		this.enemies = new ArrayList<>();
 		this.healing_spots = new ArrayList<>();
+		this.eventManager = new EventManager();
+
 		generateEnemies(heroLevel);
 		generateHealingSpots();
+		eventManager.generateEvents(this, heroLevel);
 	}
 
 	private void generateEnemies(int heroLevel)
@@ -215,5 +220,10 @@ public class GameMap
 	public List<HealingSpot> getHealingSpots()
 	{
 		return healing_spots;
+	}
+
+	public EventManager getEventManager()
+	{
+		return eventManager;
 	}
 }

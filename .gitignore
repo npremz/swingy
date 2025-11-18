@@ -36,3 +36,4 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 utils
+all_java_files.txt

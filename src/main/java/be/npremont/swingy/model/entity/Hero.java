@@ -13,6 +13,7 @@ public class Hero
 	private int			y;
 	private HeroStats	stats;
 	private Set<String>	visitedPositions;
+	private Ally ally;
 
 	public Hero(String name, HeroClass hero_class, int startX, int startY)
 	{
@@ -55,6 +56,26 @@ public class Hero
 	public Set<String> getVisitedPositions()
 	{
 		return visitedPositions;
+	}
+
+	public Ally getAlly()
+	{
+		return ally;
+	}
+
+	public void setAlly(Ally ally)
+	{
+		this.ally = ally;
+	}
+
+	public boolean hasAlly()
+	{
+		return ally != null && ally.isAlive();
+	}
+
+	public void removeAlly()
+	{
+		this.ally = null;
 	}
 
 	public void clearVisitedPositions()

@@ -6,12 +6,17 @@ import static be.npremont.swingy.view.console.TerminalUI.*;
 
 import java.util.List;
 
+import be.npremont.swingy.model.entity.Ally;
 import be.npremont.swingy.model.entity.Enemy;
 import be.npremont.swingy.model.entity.Hero;
 import be.npremont.swingy.model.entity.Item;
 import be.npremont.swingy.model.enums.Direction;
 import be.npremont.swingy.model.enums.HeroClass;
 import be.npremont.swingy.model.enums.ItemType;
+import be.npremont.swingy.model.event.EventChoice;
+import be.npremont.swingy.model.event.EventOutcome;
+import be.npremont.swingy.model.event.IEvent;
+import be.npremont.swingy.model.event.events.ShrineEvent;
 import be.npremont.swingy.model.game.GameMap;
 import be.npremont.swingy.model.stats.HeroStats;
 import be.npremont.swingy.view.IView;
@@ -44,7 +49,7 @@ public class ConsoleView implements IView
 		int width = TerminalUI.TERMINAL_WIDTH;
 		int contentWidth = width - 4;
 		
-		java.util.List<String> lines = TerminalUI.wrapText(msg, contentWidth);
+		List<String> lines = TerminalUI.wrapText(msg, contentWidth);
 		for (String line : lines)
 		{
 			System.out.println(line);
@@ -61,39 +66,60 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createSectionHeader("STATUS", CYAN, width), CYAN));
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
 		
-		// Position
 		String posValue = colorize("(" + hero.getX() + ", " + hero.getY() + ")", BRIGHT_CYAN);
 		System.out.println(TerminalUI.createLabelValueLine("Position:", posValue, width));
 		
-		// Map size
 		String mapValue = colorize(mapSize + "x" + mapSize, WHITE);
 		System.out.println(TerminalUI.createLabelValueLine("Map size:", mapValue, width));
 		
-		// Distance to edge
 		String distColor = distanceToEdge <= 3 ? BRIGHT_GREEN : YELLOW;
 		String distValue = colorize("" + distanceToEdge, distColor);
 		System.out.println(TerminalUI.createLabelValueLine("Distance to edge:", distValue, width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
 		
-		// Stats compactes
 		HeroStats stats = hero.getStats();
 		
-		// HP bar
 		String hpColor = getHealthColorForStats(stats.getCurrentHp(), stats.getMaxHpWithItems());
 		System.out.println(TerminalUI.createLabeledProgressBar("HP:", stats.getCurrentHp(), stats.getMaxHpWithItems(), 15, hpColor));
 		
-		// XP bar
 		System.out.println(TerminalUI.createLabeledProgressBar("XP:", stats.getXp(), stats.getXpToNextLevel(), 15, CYAN));
 		
-		// Stats en ligne
 		String statsLine = "LVL: " + colorize("" + stats.getLevel(), BRIGHT_YELLOW) + 
 			" | ATK: " + colorize("" + stats.getTotalAttack(), RED) + 
 			" | DEF: " + colorize("" + stats.getTotalDefense(), BLUE);
 		System.out.println(TerminalUI.createBoxedText(statsLine, width));
 		
+		if (hero.hasAlly())
+		{
+			Ally ally = hero.getAlly();
+			
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
+			System.out.println(colorize(TerminalUI.createSectionHeader("ALLY", GREEN, width), GREEN));
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), CYAN));
+			
+			String allyName = colorize(ally.getName(), BOLD + BRIGHT_GREEN) + " (" + ally.getType().name().replace("_", " ") + ")";
+			System.out.println(TerminalUI.createBoxedText(allyName, width));
+			
+			String allyHpColor = getHealthColorForStats(ally.getCurrentHp(), ally.getMaxHp());
+			System.out.println(TerminalUI.createLabeledProgressBar("HP:", ally.getCurrentHp(), ally.getMaxHp(), 15, allyHpColor));
+			
+			String allyStats = "ATK: " + colorize("" + ally.getAttack(), RED) + 
+				" | DEF: " + colorize("" + ally.getDefense(), BLUE) + 
+				" | Combats left: " + colorize("" + ally.getRemainingCombats(), BRIGHT_YELLOW);
+			System.out.println(TerminalUI.createBoxedText(allyStats, width));
+			
+			int contentWidth = width - 4;
+			List<String> descLines = TerminalUI.wrapText(ally.getDescription(), contentWidth);
+			for (String line : descLines)
+			{
+				System.out.println(TerminalUI.createBoxedText(colorize(line, DIM), width));
+			}
+		}
+		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), CYAN));
 	}
+
 
 	private String getHealthColorForStats(int current, int max)
 	{
@@ -135,7 +161,6 @@ public class ConsoleView implements IView
 		hpDetails += ")";
 		System.out.println(TerminalUI.createBoxedText(hpDetails, width));
 		
-		// Attack
 		String atkValue = colorize("" + stats.getTotalAttack(), RED) + " (Base: " + stats.getAttack();
 		if (stats.hasWeapon())
 		{
@@ -144,7 +169,6 @@ public class ConsoleView implements IView
 		atkValue += ")";
 		System.out.println(TerminalUI.createLabelValueLine("ATK:", atkValue, width));
 		
-		// Defense
 		String defValue = colorize("" + stats.getTotalDefense(), BLUE) + " (Base: " + stats.getDefense();
 		if (stats.hasArmor())
 		{
@@ -157,7 +181,6 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createSectionHeader("EQUIPMENT", CYAN, width), CYAN));
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_CYAN));
 		
-		// Equipment
 		displayEquipmentItem("Weapon:", stats.getWeapon(), width);
 		displayEquipmentItem("Armor:", stats.getArmor(), width);
 		displayEquipmentItem("Helm:", stats.getHelm(), width);
@@ -192,9 +215,8 @@ public class ConsoleView implements IView
 		
 		for (String line : combatLog)
 		{
-			// Wrappe chaque ligne de combat
 			int contentWidth = width - 4;
-			java.util.List<String> wrappedLines = TerminalUI.wrapText(line, contentWidth);
+			List<String> wrappedLines = TerminalUI.wrapText(line, contentWidth);
 			
 			for (String wrappedLine : wrappedLines)
 			{
@@ -249,7 +271,7 @@ public class ConsoleView implements IView
 		
 		if (healed)
 		{
-			System.out.println(TerminalUI.createBoxedText("✨ You found a healing fountain! ✨", width));
+			System.out.println(TerminalUI.createBoxedText("You found a healing fountain!", width));
 			System.out.println(TerminalUI.createBoxedText("", width));
 			System.out.println(TerminalUI.createBoxedText("The magical waters restore your vitality.", width));
 			System.out.println(TerminalUI.createBoxedText("", width));
@@ -272,6 +294,171 @@ public class ConsoleView implements IView
 	}
 
 	@Override
+	public void displayEvent(IEvent event)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createSectionHeader("RANDOM EVENT", BRIGHT_YELLOW, width), BRIGHT_YELLOW));
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+		
+		System.out.println(TerminalUI.createBoxedText(colorize(event.getTitle(), BOLD + BRIGHT_CYAN), width));
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		int contentWidth = width - 4;
+		String[] paragraphs = event.getDescription().split("\n");
+		
+		for (String paragraph : paragraphs)
+		{
+			if (paragraph.trim().isEmpty())
+			{
+				System.out.println(TerminalUI.createBoxedText("", width));
+			}
+			else
+			{
+				List<String> wrappedLines = TerminalUI.wrapText(paragraph.trim(), contentWidth);
+				for (String line : wrappedLines)
+				{
+					System.out.println(TerminalUI.createBoxedText(line, width));
+				}
+			}
+		}
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
+		
+		List<EventChoice> choices = event.getEventChoices();
+		for (EventChoice choice : choices)
+		{
+			String choiceText = colorize(choice.getId() + ".", BOLD) + " " + choice.getText();
+			System.out.println(TerminalUI.createBoxedText(choiceText, width));
+		}
+		
+		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
+	}
+
+	@Override
+	public int getEventChoice(List<EventChoice> choices)
+	{
+		while (true)
+		{
+			String input = getUserInput(colorize("> ", BRIGHT_GREEN));
+			
+			try
+			{
+				int choice = Integer.parseInt(input);
+				for (EventChoice c : choices)
+				{
+					if (c.getId() == choice)
+						return choice;
+				}
+				
+				displayMessage(colorize("Invalid choice. Please choose a valid option.", RED));
+			}
+			catch (NumberFormatException e)
+			{
+				displayMessage(colorize("Please enter a number.", RED));
+			}
+		}
+	}
+
+	@Override
+	public void displayEventOutcome(EventOutcome outcome)
+	{
+		int width = TerminalUI.TERMINAL_WIDTH;
+		
+		System.out.println();
+		
+		if (outcome.isSuccess())
+		{
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), GREEN));
+			System.out.println(colorize(TerminalUI.createSectionHeader("OUTCOME", GREEN, width), GREEN));
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), GREEN));
+		}
+		else
+		{
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), RED));
+			System.out.println(colorize(TerminalUI.createSectionHeader("OUTCOME", RED, width), RED));
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), RED));
+		}
+		
+		int contentWidth = width - 4;
+		String[] paragraphs = outcome.getMessage().split("\n");
+		
+		for (String paragraph : paragraphs)
+		{
+			if (paragraph.trim().isEmpty())
+			{
+				System.out.println(TerminalUI.createBoxedText("", width));
+			}
+			else
+			{
+				java.util.List<String> wrappedLines = TerminalUI.wrapText(paragraph.trim(), contentWidth);
+				for (String line : wrappedLines)
+				{
+					System.out.println(TerminalUI.createBoxedText(line, width));
+				}
+			}
+		}
+		
+		if (!outcome.getEffects().isEmpty())
+		{
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), outcome.isSuccess() ? GREEN : RED));
+			System.out.println(TerminalUI.createBoxedText(colorize("Effects:", BOLD), width));
+			
+			for (var entry : outcome.getEffects().entrySet())
+			{
+				String effectText = formatEffect(entry.getKey(), entry.getValue());
+				System.out.println(TerminalUI.createBoxedText(effectText, width));
+			}
+		}
+		
+		if (outcome.isSuccess())
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), GREEN));
+		else
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), RED));
+	}
+
+
+	private String formatEffect(be.npremont.swingy.model.event.enums.EffectType type, Object value)
+	{
+		switch (type)
+		{
+			case HP_CHANGE:
+				int hpChange = (Integer)value;
+				if (hpChange > 0)
+					return colorize("+ " + hpChange + " HP", GREEN);
+				else
+					return colorize("- " + (-hpChange) + " HP", RED);
+			
+			case XP_CHANGE:
+				int xpChange = (Integer)value;
+				if (xpChange > 0)
+					return colorize("+ " + xpChange + " XP", CYAN);
+				else
+					return colorize("- " + (-xpChange) + " XP", RED);
+			
+			case ITEM_GAINED:
+				return colorize("+ Item obtained", BRIGHT_YELLOW);
+			
+			case ALLY_GAINED:
+				return colorize("+ Ally joined your party", BRIGHT_GREEN);
+			
+			case STAT_BUFF:
+				ShrineEvent.StatBoost boost = (ShrineEvent.StatBoost)value;
+				return colorize("+ " + boost.getValue() + " " + boost.getStatName().toUpperCase() + " (PERMANENT)", BRIGHT_GREEN);
+
+			
+			case STAT_DEBUFF:
+				return colorize("- Temporary stat reduction", PURPLE);
+			
+			default:
+				return "• Effect applied";
+		}
+	}
+
+	@Override
 	public String getUserInput(String prompt)
 	{
 		System.out.print(prompt);
@@ -290,9 +477,8 @@ public class ConsoleView implements IView
 			colorize("D", BOLD) + "=East, " + colorize("A", BOLD) + "=West, " + 
 			colorize("I", BOLD) + "=Info, " + colorize("Q", BOLD) + "=Quit";
 		
-		// Wrappe les contrôles si nécessaire
 		int contentWidth = width - 4;
-		java.util.List<String> wrappedControls = TerminalUI.wrapText(controls, contentWidth);
+		List<String> wrappedControls = TerminalUI.wrapText(controls, contentWidth);
 		
 		for (String line : wrappedControls)
 		{
@@ -338,7 +524,6 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createSectionHeader("Choose Your Class", BRIGHT_YELLOW, width), BRIGHT_YELLOW));
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
 		
-		// Warrior
 		System.out.println(TerminalUI.createBoxedText(colorize("1. WARRIOR", BOLD + RED), width));
 		System.out.println(TerminalUI.createBoxedText("   High HP and Defense", width));
 		System.out.println(TerminalUI.createBoxedText("   Base: HP=150, ATK=12, DEF=15", width));
@@ -346,7 +531,6 @@ public class ConsoleView implements IView
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
-		// Archer
 		System.out.println(TerminalUI.createBoxedText(colorize("2. ARCHER", BOLD + GREEN), width));
 		System.out.println(TerminalUI.createBoxedText("   Balanced Stats", width));
 		System.out.println(TerminalUI.createBoxedText("   Base: HP=100, ATK=15, DEF=10", width));
@@ -354,7 +538,6 @@ public class ConsoleView implements IView
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
-		// Assassin
 		System.out.println(TerminalUI.createBoxedText(colorize("3. ASSASSIN", BOLD + PURPLE), width));
 		System.out.println(TerminalUI.createBoxedText("   High Attack, Low Defense", width));
 		System.out.println(TerminalUI.createBoxedText("   Base: HP=80, ATK=20, DEF=8", width));
@@ -409,10 +592,33 @@ public class ConsoleView implements IView
 		System.out.println(TerminalUI.createLabelValueLine("ATK:", colorize("" + stats.getTotalAttack(), RED), width));
 		System.out.println(TerminalUI.createLabelValueLine("DEF:", colorize("" + stats.getTotalDefense(), BLUE), width));
 		
+		if (hero.hasAlly())
+		{
+			Ally ally = hero.getAlly();
+			
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+			System.out.println(colorize(TerminalUI.createSectionHeader("Your Ally", GREEN, width), GREEN));
+			System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
+			
+			String allyName = colorize(ally.getName(), BOLD + BRIGHT_GREEN);
+			System.out.println(TerminalUI.createLabelValueLine("Name:", allyName, width));
+			
+			String allyHpColor = getHealthColorForStats(ally.getCurrentHp(), ally.getMaxHp());
+			System.out.println(TerminalUI.createLabeledProgressBar("HP:", ally.getCurrentHp(), ally.getMaxHp(), 15, allyHpColor));
+			System.out.println(TerminalUI.createLabelValueLine("ATK:", colorize("" + ally.getAttack(), RED), width));
+		}
+		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_RED));
 		
 		System.out.println(TerminalUI.createBoxedText(colorize("1.", BOLD) + " FIGHT", width));
-		System.out.println(TerminalUI.createBoxedText(colorize("2.", BOLD) + " RUN (50% chance)", width));
+		
+		String runText = colorize("2.", BOLD) + " RUN (50% chance";
+		if (hero.hasAlly() && hero.getAlly().getType() == be.npremont.swingy.model.enums.AllyType.SNEAKY_THIEF)
+		{
+			runText += " → 65% with " + hero.getAlly().getName();
+		}
+		runText += ")";
+		System.out.println(TerminalUI.createBoxedText(runText, width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_RED));
 
@@ -429,6 +635,7 @@ public class ConsoleView implements IView
 				return chooseFightOrRun(hero, enemy);
 		}
 	}
+
 
 	@Override
 	public boolean chooseEquipItem(Item newItem, Item currentItem)
@@ -454,7 +661,6 @@ public class ConsoleView implements IView
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
-		// Comparison
 		System.out.println(colorize(TerminalUI.createSectionHeader("COMPARISON", CYAN, width), CYAN));
 		
 		if (currentItem != null)

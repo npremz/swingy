@@ -210,6 +210,24 @@ public class HeroStats
 		}
 	}
 
+	public void addPermanentAttack(int bonus)
+	{
+		this.attack += bonus;
+	}
+
+	public void addPermanentDefense(int bonus)
+	{
+		this.defense += bonus;
+	}
+
+	public void addPermanentMaxHp(int bonus)
+	{
+		this.max_hp += bonus;
+		double ratio = (double)current_hp / (max_hp - bonus);
+		this.current_hp = (int)Math.round(ratio * max_hp);
+	}
+
+
 	// Getters 
 	public int getMaxHp()
 	{

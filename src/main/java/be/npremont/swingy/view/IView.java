@@ -5,6 +5,9 @@ import be.npremont.swingy.model.entity.Hero;
 import be.npremont.swingy.model.entity.Item;
 import be.npremont.swingy.model.enums.Direction;
 import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.event.EventChoice;
+import be.npremont.swingy.model.event.EventOutcome;
+import be.npremont.swingy.model.event.IEvent;
 import be.npremont.swingy.model.game.Combat;
 
 import java.util.List;
@@ -19,6 +22,11 @@ public interface IView
 	void displayDefeat();
 	void displayLevelUp(int newLevel);
 	void displayHealingSpot(boolean healed, int healAmount, int maxHp);
+
+	void displayEvent(IEvent event);
+	int getEventChoice(List<EventChoice> choices);
+	void displayEventOutcome(EventOutcome outcome);
+
 	String getUserInput(String prompt);
 	Direction getDirection(Hero hero);
 	HeroClass chooseHeroClass();

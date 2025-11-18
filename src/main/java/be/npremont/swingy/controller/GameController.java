@@ -3,8 +3,14 @@ package be.npremont.swingy.controller;
 import be.npremont.swingy.model.entity.Enemy;
 import be.npremont.swingy.model.entity.Hero;
 import be.npremont.swingy.model.entity.Item;
+import be.npremont.swingy.model.entity.Ally;
 import be.npremont.swingy.model.enums.Direction;
 import be.npremont.swingy.model.enums.HeroClass;
+import be.npremont.swingy.model.enums.AllyType;
+import be.npremont.swingy.model.event.EventOutcome;
+import be.npremont.swingy.model.event.EventSpawn;
+import be.npremont.swingy.model.event.GameContext;
+import be.npremont.swingy.model.event.IEvent;
 import be.npremont.swingy.model.game.Combat;
 import be.npremont.swingy.model.game.GameMap;
 import be.npremont.swingy.model.game.HealingSpot;
@@ -93,7 +99,11 @@ public class GameController
 
 			hero.move(dir.getDx(), dir.getDy());
 
-			if (game_map.hasHealingSpotAt(hero.getX(), hero.getY()))
+			if (game_map.getEventManager().hasEventAt(hero.getX(), hero.getY()))
+			{
+				handleEvent(hero.getX(), hero.getY());
+			}
+			else if (game_map.hasHealingSpotAt(hero.getX(), hero.getY()))
 			{
 				handleHealingSpot(hero.getX(), hero.getY());
 			}
@@ -127,6 +137,26 @@ public class GameController
 						running = false;
 			}
 		}
+	}
+
+	private void handleEvent(int x, int y)
+	{
+		EventSpawn spawn = game_map.getEventManager().getEventAt(x, y);
+
+		if (spawn == null || spawn.isTriggered())
+			return;
+
+		view.clearScreen();
+		IEvent event = spawn.getEvent();
+		GameContext context = new GameContext(hero, game_map, hero.getStats().getLevel());
+		view.displayEvent(event);
+		int choiceId = view.getEventChoice(event.getEventChoices());
+		EventOutcome outcome = event.trigger(context, choiceId);
+		game_map.getEventManager().applyOutcome(outcome, hero, view);
+		view.displayEventOutcome(outcome);
+
+		spawn.markAsTriggered();
+		view.waitForInput("Press Enter to continue...");
 	}
 
 	private void handleHealingSpot(int x, int y)
@@ -182,8 +212,17 @@ public class GameController
 
 	private boolean attemptRun()
 	{
-		return Math.random() < 0.5;
+		double baseChance = 0.50;
+		
+		if (hero.hasAlly() && hero.getAlly().getType() == be.npremont.swingy.model.enums.AllyType.SNEAKY_THIEF)
+		{
+			baseChance = 0.65;
+			view.displayMessage("\n" + hero.getAlly().getName() + " creates a distraction!");
+		}
+		
+		return Math.random() < baseChance;
 	}
+
 
 	private boolean handleCombat(Enemy enemy)
 	{
