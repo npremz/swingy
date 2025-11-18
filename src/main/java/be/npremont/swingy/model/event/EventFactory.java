@@ -65,6 +65,8 @@ public class EventFactory
 				return new TrapEvent(heroLevel);
 			case AMBUSH:
 				return new AmbushEvent(heroLevel);
+			case MYSTERY_MERCHANT:
+				return new MysteryMerchantEvent(heroLevel);
 			default:
 				return new TreasureChestEvent(heroLevel);
 		}

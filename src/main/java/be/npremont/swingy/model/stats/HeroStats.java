@@ -81,33 +81,35 @@ public class HeroStats
 
 	public void equipWeapon(Item item)
 	{
-		if (item.getType() != ItemType.WEAPON)
+		if (item != null && item.getType() != ItemType.WEAPON)
 			throw new IllegalArgumentException("Can only equip weapons in weapon slot");
 		this.weapon = item;
 	}
 
 	public void equipArmor(Item item)
 	{
-		if (item.getType() != ItemType.ARMOR)
+		if (item != null && item.getType() != ItemType.ARMOR)
 			throw new IllegalArgumentException("Can only equip armor in armor slot");
 		this.armor = item;
 	}
 
 	public void equipHelm(Item item)
 	{
-		if (item.getType() != ItemType.HELM)
+		if (item != null && item.getType() != ItemType.HELM)
 			throw new IllegalArgumentException("Can only equip helms in helm slot");
 
-		int currentHpWithoutHelm = this.current_hp;
 		int oldMaxHp = getMaxHpWithItems();
 
 		this.helm = item;
 
-		int newMaxHp = getMaxHpWithItems();
-		if (oldMaxHp > 0)
+		if (item != null)
 		{
-			double ratio = (double) currentHpWithoutHelm / oldMaxHp;
-			this.current_hp = (int) Math.round(newMaxHp * ratio);
+			int newMaxHp = getMaxHpWithItems();
+			if (oldMaxHp > 0)
+			{
+				double ratio = (double)current_hp / oldMaxHp;
+				this.current_hp = (int)Math.round(newMaxHp * ratio);
+			}
 		}
 	}
 
@@ -292,6 +294,21 @@ public class HeroStats
 	public boolean hasHelm()
 	{
 		return helm != null;
+	}
+
+	public void unequipWeapon()
+	{
+		this.weapon = null;
+	}
+
+	public void unequipArmor()
+	{
+		this.armor = null;
+	}
+
+	public void unequipHelm()
+	{
+		this.helm = null;
 	}
 
 	public void setCurrentHp(int hp)

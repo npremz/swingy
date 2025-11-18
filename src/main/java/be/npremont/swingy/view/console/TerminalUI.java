@@ -366,7 +366,7 @@ public class TerminalUI
 		int mapWidth = (endX - startX + 1) * 2 + 2;
 		
 		System.out.println();
-		System.out.println(createBorderedLine("+", "-", "+", mapWidth));
+		System.out.println(colorize(createBorderedLine("+", "-", "+", mapWidth), CYAN));
 		
 		for (int y = startY; y <= endY; y++)
 		{
@@ -379,7 +379,22 @@ public class TerminalUI
 				}
 				else if (visitedPositions.contains(x + "," + y))
 				{
-					line.append(colorize("·", DIM + WHITE)).append(" ");
+					if (gameMap.hasEnemyAt(x, y))
+					{
+						line.append(colorize("E", RED)).append(" ");
+					}
+					else if (gameMap.hasHealingSpotAt(x, y))
+					{
+						line.append(colorize("+", BRIGHT_GREEN)).append(" ");
+					}
+					else if (gameMap.getEventManager().hasEventAt(x, y))
+					{
+						line.append(colorize("?", BRIGHT_YELLOW)).append(" ");
+					}
+					else
+					{
+						line.append(colorize("·", DIM + WHITE)).append(" ");
+					}
 				}
 				else if (x == 0 || x == mapSize - 1 || y == 0 || y == mapSize - 1)
 				{
@@ -394,7 +409,13 @@ public class TerminalUI
 			System.out.println(line.toString());
 		}
 		
-		System.out.println(createBorderedLine("+", "-", "+", mapWidth));
+		System.out.println(colorize(createBorderedLine("+", "-", "+", mapWidth), CYAN));
+		System.out.println(colorize(createBoxedText(
+			colorize("@", BRIGHT_GREEN) + "=You  " +
+			colorize("E", RED) + "=Enemy  " +
+			colorize("+", BRIGHT_GREEN) + "=Healing  " +
+			colorize("?", BRIGHT_YELLOW) + "=Event  " +
+			colorize("#", YELLOW) + "=Edge", mapWidth), CYAN));
 	}
 
 	public static void drawItemComparison(String itemType, String statName, String currentName, 

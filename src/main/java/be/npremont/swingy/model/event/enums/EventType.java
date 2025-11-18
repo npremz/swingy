@@ -3,10 +3,11 @@ package be.npremont.swingy.model.event.enums;
 public enum EventType
 {
 	ALLY_ENCOUNTER(false, 30.0),
-	TREASURE_CHEST(false, 30.0),
+	TREASURE_CHEST(false, 20.0),
 	SHRINE(true, 15.0),
 	TRAP(false, 15.0),
-	AMBUSH(false, 10.0);
+	AMBUSH(false, 10.0),
+	MYSTERY_MERCHANT(false, 10.0);
 
 	private final boolean unique;
 	private final double spawnWeight;

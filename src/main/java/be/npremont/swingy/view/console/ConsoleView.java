@@ -524,23 +524,26 @@ public class ConsoleView implements IView
 		System.out.println(colorize(TerminalUI.createSectionHeader("Choose Your Class", BRIGHT_YELLOW, width), BRIGHT_YELLOW));
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
 		
+		// WARRIOR
 		System.out.println(TerminalUI.createBoxedText(colorize("1. WARRIOR", BOLD + RED), width));
 		System.out.println(TerminalUI.createBoxedText("   High HP and Defense", width));
-		System.out.println(TerminalUI.createBoxedText("   Base: HP=150, ATK=12, DEF=15", width));
-		System.out.println(TerminalUI.createBoxedText("   Growth: HP+15%, ATK+8%, DEF+12%", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=120, ATK=10, DEF=12", width));
+		System.out.println(TerminalUI.createBoxedText("   Growth: HP+12%, ATK+8%, DEF+12%", width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
+		// ARCHER
 		System.out.println(TerminalUI.createBoxedText(colorize("2. ARCHER", BOLD + GREEN), width));
 		System.out.println(TerminalUI.createBoxedText("   Balanced Stats", width));
-		System.out.println(TerminalUI.createBoxedText("   Base: HP=100, ATK=15, DEF=10", width));
-		System.out.println(TerminalUI.createBoxedText("   Growth: HP+10%, ATK+10%, DEF+10%", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=100, ATK=12, DEF=8", width));
+		System.out.println(TerminalUI.createBoxedText("   Growth: HP+10%, ATK+12%, DEF+8%", width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "-", "+", width), BRIGHT_YELLOW));
 		
+		// ASSASSIN
 		System.out.println(TerminalUI.createBoxedText(colorize("3. ASSASSIN", BOLD + PURPLE), width));
 		System.out.println(TerminalUI.createBoxedText("   High Attack, Low Defense", width));
-		System.out.println(TerminalUI.createBoxedText("   Base: HP=80, ATK=20, DEF=8", width));
+		System.out.println(TerminalUI.createBoxedText("   Base: HP=80, ATK=15, DEF=6", width));
 		System.out.println(TerminalUI.createBoxedText("   Growth: HP+5%, ATK+15%, DEF+5%", width));
 		
 		System.out.println(colorize(TerminalUI.createBorderedLine("+", "=", "+", width), BRIGHT_YELLOW));
@@ -560,7 +563,7 @@ public class ConsoleView implements IView
 				return chooseHeroClass();
 		}
 	}
-
+	
 	@Override
 	public boolean chooseFightOrRun(Hero hero, Enemy enemy)
 	{
