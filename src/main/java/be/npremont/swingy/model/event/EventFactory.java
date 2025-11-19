@@ -19,6 +19,11 @@ public class EventFactory
 		EventType type = selectEventType();
 		return createEvent(type, heroLevel);
 	}
+	
+	public IEvent createMerchantEvent(int heroLevel)
+	{
+		return new MysteryMerchantEvent(heroLevel);
+	}
 
 	private EventType selectEventType()
 	{

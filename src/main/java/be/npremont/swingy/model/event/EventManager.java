@@ -31,6 +31,23 @@ public class EventManager
 		int guaranteedEvents = 1;
 		int eventsPlaced = 0;
 
+		boolean merchantPlaced = false;
+		while (!merchantPlaced)
+		{
+			int x = (int)(Math.random() * size);
+			int y = (int)(Math.random() * size);
+
+			if (x == centerX && y == centerY)
+				continue;
+
+			if (gameMap.hasEnemyAt(x, y) || gameMap.hasHealingSpotAt(x, y))
+				continue;
+
+			IEvent merchant = factory.createMerchantEvent(heroLevel);
+			events.add(new EventSpawn(x, y, merchant));
+			merchantPlaced = true;
+		}
+
 		while (eventsPlaced < guaranteedEvents)
 		{
 			int x = (int)(Math.random() * size);

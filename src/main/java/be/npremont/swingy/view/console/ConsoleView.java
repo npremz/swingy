@@ -506,6 +506,21 @@ public class ConsoleView implements IView
 				hero.getStats().addXp(800);
 				displayMessage(colorize("Added 800xp.", YELLOW));
 				return getDirection(hero);
+			case "R":
+			{
+				int level = hero.getStats().getLevel();
+				int size = (level - 1) * 5 + 10 - (level % 2);
+
+				for (int y = 0; y < size; y++)
+				{
+					for (int x = 0; x < size; x++)
+					{
+						hero.getVisitedPositions().add(x + "," + y);
+					}
+				}
+				displayMessage(colorize("Map revealed!", YELLOW));
+				return getDirection(hero);
+			}
 			case "Q":
 				return null;
 			default:

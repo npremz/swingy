@@ -25,15 +25,7 @@ public class MysteryMerchantEvent implements IEvent
 
 	private Item generateJackpotItem()
 	{
-		double roll = Math.random();
-		ItemRarity rarity;
-		
-		if (roll < 0.6)
-			rarity = ItemRarity.RARE;
-		else if (roll < 0.9)
-			rarity = ItemRarity.EPIC;
-		else
-			rarity = ItemRarity.LEGENDARY;
+		ItemRarity rarity = ItemRarity.LEGENDARY;
 		
 		ItemType[] types = ItemType.values();
 		ItemType randomType = types[(int)(Math.random() * types.length)];
@@ -92,9 +84,9 @@ public class MysteryMerchantEvent implements IEvent
 			"→ 30% OF YOUR CURRENT XP\n\n" +
 			"POTENTIAL REWARDS:\n" +
 			"60% chance: NOTHING (you lose everything)\n" +
-			"30% chance: Rare item + 1000 XP\n" +
-			"9% chance: Epic item + 2500 XP\n" +
-			"1% chance: LEGENDARY JACKPOT - " + jackpotItem.getName() + " + 10000 XP\n\n" +
+			"15% chance: Rare item + 1000 XP (minus stake)\n" +
+			"15% chance: Epic item + 2500 XP (minus stake)\n" +
+			"10% chance: LEGENDARY JACKPOT - " + jackpotItem.getName() + " + 10000 XP (Pure Bonus!)\n\n" +
 			"'So, what do you say?'";
 	}
 
@@ -132,7 +124,8 @@ public class MysteryMerchantEvent implements IEvent
 		double roll = Math.random() * 100.0;
 		
 		int xpLost = (int)(context.getHero().getStats().getXp() * 0.30);
-		
+
+
 		if (roll < 10.0)
 		{
 			return jackpotWin(context, xpLost);
